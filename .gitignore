@@ -1,0 +1,44 @@
+# Source and private data are never versioned.
+Reviews.csv
+database.sqlite
+finefoods.txt
+finefoods.txt.gz
+*.sqlite
+*.sqlite3
+*.csv
+*.parquet
+*.feather
+*.arrow
+data/raw/
+data/private/
+data/synthetic/generated/
+
+# Generated reports and fitted artifacts.
+reports/generated/
+artifacts/
+models/
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+
+# Python and local tooling.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-tmp/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Editors and operating systems.
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

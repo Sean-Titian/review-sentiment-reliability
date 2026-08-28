@@ -1,0 +1,9 @@
+# Canonical public benchmark environment (Python 3.13.9).
+joblib==1.5.2
+numpy==2.3.5
+pandas==2.3.3
+pytest==8.4.2
+ruff==0.12.0
+scikit-learn==1.7.2
+scipy==1.16.3
+threadpoolctl==3.5.0

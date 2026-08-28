@@ -1,0 +1,5221 @@
+{
+  "artifact_scope": "aggregate_only_synthetic_reliability_fixture",
+  "contract_version": "1.0",
+  "data_audit": {
+    "attention_prevalence": 0.25291479820627805,
+    "conflicting_proxy_fingerprint_groups": 123,
+    "conflicting_proxy_row_share": 0.16233183856502242,
+    "join_amplification": "not_applicable_single_table_fixture",
+    "labeled_rows_after_partition_local_neutral_exclusion": 2230,
+    "missing_body_share": 0.02625,
+    "missing_summary_share": 0.0,
+    "near_duplicate_row_share": 0.44583333333333336,
+    "normalized_exact_duplicate_row_share": 0.44583333333333336,
+    "rating_distribution": {
+      "1": {
+        "rows": 219,
+        "share": 0.09125
+      },
+      "2": {
+        "rows": 345,
+        "share": 0.14375
+      },
+      "3": {
+        "rows": 170,
+        "share": 0.07083333333333333
+      },
+      "4": {
+        "rows": 931,
+        "share": 0.3879166666666667
+      },
+      "5": {
+        "rows": 735,
+        "share": 0.30625
+      }
+    },
+    "raw_exact_duplicate_row_share": 0.6791666666666667,
+    "raw_rows": 2400
+  },
+  "decision_contract": {
+    "analysis_unit": "one unique review submission",
+    "available_model_features": [
+      "summary",
+      "text"
+    ],
+    "causal_claim": false,
+    "intended_decision": "rank a fixed-capacity manual review queue",
+    "neutral_policy": "3-star rows are excluded inside each assigned partition",
+    "prediction_time": "when an unscored review summary and body are submitted",
+    "target": "rating-derived needs_attention proxy: 1-2 stars=1, 4-5 stars=0"
+  },
+  "evaluation_seeds": [
+    1103,
+    2909,
+    4703
+  ],
+  "limitations": [
+    "All scores come from authored synthetic text and demonstrate the evaluation system only.",
+    "The target is a rating-derived proxy, not human-annotated sentiment or causal impact.",
+    "No real-data generalization, fairness, moderation, or business value claim is supported.",
+    "Hash-group protocols approximate deployment risks but cannot reproduce every source shift.",
+    "A corrected split-first private source audit is required before publishing real-data metrics.",
+    "Multi-seed min/max values describe protocol and optimizer sensitivity; they are not sampling confidence intervals."
+  ],
+  "naive_vs_strict_summary": {
+    "fingerprint_group_mean": 0.4483606247090159,
+    "fingerprint_group_prevalence": 0.24218441110574176,
+    "forward_time_mean": 0.51464294068791,
+    "forward_time_prevalence": 0.3087248322147651,
+    "interpretation": "A synthetic diagnostic gap created by planted duplicates and drift; not an empirical finding about Amazon or production performance.",
+    "metric": "attention-class PR-AUC",
+    "row_random_mean": 0.442544838724453,
+    "row_random_minus_fingerprint_group": -0.005815785984562893,
+    "row_random_prevalence": 0.2693992324996692
+  },
+  "protocols": {
+    "fingerprint_group": {
+      "baseline_notes": {
+        "seeded_random_score": "Uses independent seeded uniform scores; its validation threshold and ranking metrics are chance diagnostics.",
+        "train_prevalence_probability_and_majority_decision": "Uses the training prevalence as a constant probability and a fixed 0.50 decision threshold. Ranking-at-budget metrics are undefined because all scores tie, so they are intentionally omitted."
+      },
+      "baselines": {
+        "seeded_random_score": {
+          "accuracy_supplementary": {
+            "max": 0.3393665158371041,
+            "mean": 0.27491891080554703,
+            "min": 0.23058252427184467,
+            "runs": 3,
+            "std": 0.05711247707216829
+          },
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "balanced_accuracy": {
+            "max": 0.5126556742071711,
+            "mean": 0.49502620589163754,
+            "min": 0.47548000868513296,
+            "runs": 3,
+            "std": 0.018661803610121014
+          },
+          "brier": {
+            "max": 0.3672970710345674,
+            "mean": 0.3507375285020082,
+            "min": 0.34080080314411654,
+            "runs": 3,
+            "std": 0.014436389213630859
+          },
+          "budget_count": {
+            "max": 45.0,
+            "mean": 43.0,
+            "min": 42.0,
+            "runs": 3,
+            "std": 1.7320508075688772
+          },
+          "ece_10_bins": {
+            "max": 0.3476938630659331,
+            "mean": 0.33014556766020436,
+            "min": 0.29523924203281837,
+            "runs": 3,
+            "std": 0.030229914436099493
+          },
+          "f1_attention": {
+            "max": 0.4016393442622951,
+            "mean": 0.38044080755077125,
+            "min": 0.36217303822937624,
+            "runs": 3,
+            "std": 0.01989571250526814
+          },
+          "lift_at_budget": {
+            "max": 0.8530020703933746,
+            "mean": 0.6763981064985559,
+            "min": 0.4808136846971798,
+            "runs": 3,
+            "std": 0.18681874089218622
+          },
+          "log_loss": {
+            "max": 1.1164188390640577,
+            "mean": 1.0461813976519845,
+            "min": 0.976585761666834,
+            "runs": 3,
+            "std": 0.06991874798113172
+          },
+          "pr_auc_attention": {
+            "max": 0.23722387532242767,
+            "mean": 0.22137838678429703,
+            "min": 0.2037511807406912,
+            "runs": 3,
+            "std": 0.01680732603933594
+          },
+          "precision_at_budget": {
+            "max": 0.19047619047619047,
+            "mean": 0.16243386243386243,
+            "min": 0.11904761904761904,
+            "runs": 3,
+            "std": 0.0381062594286367
+          },
+          "precision_attention": {
+            "max": 0.2613333333333333,
+            "mean": 0.24051007969995308,
+            "min": 0.2222222222222222,
+            "runs": 3,
+            "std": 0.019678438157942832
+          },
+          "recall_at_budget": {
+            "max": 0.08695652173913043,
+            "mean": 0.06876555707883665,
+            "min": 0.04854368932038835,
+            "runs": 3,
+            "std": 0.019286779128541938
+          },
+          "recall_attention": {
+            "max": 0.9782608695652174,
+            "mean": 0.9193796219855533,
+            "min": 0.8672566371681416,
+            "runs": 3,
+            "std": 0.05580986014306735
+          },
+          "roc_auc_supplementary": {
+            "max": 0.4818032654598273,
+            "mean": 0.4523050400169817,
+            "min": 0.4132572350259003,
+            "runs": 3,
+            "std": 0.035256707506845765
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          },
+          "threshold": {
+            "max": 0.13636360741100106,
+            "mean": 0.06860696895032325,
+            "min": 0.01346092940417487,
+            "runs": 3,
+            "std": 0.0624142409154333
+          }
+        },
+        "train_prevalence_probability_and_majority_decision": {
+          "accuracy_supplementary": {
+            "max": 0.7766990291262136,
+            "mean": 0.7578155888942583,
+            "min": 0.744343891402715,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "balanced_accuracy": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.1905792533976115,
+            "mean": 0.18379131302264304,
+            "min": 0.17446892529007135,
+            "runs": 3,
+            "std": 0.00834884635680258
+          },
+          "ece_10_bins": {
+            "max": 0.03211351755041075,
+            "mean": 0.018242138797284174,
+            "min": 0.005784629071995562,
+            "runs": 3,
+            "std": 0.013221265497225129
+          },
+          "f1_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "log_loss": {
+            "max": 0.5692309583745268,
+            "mean": 0.5542816266955544,
+            "min": 0.5338462238524637,
+            "runs": 3,
+            "std": 0.018319186442430985
+          },
+          "pr_auc_attention": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "precision_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "recall_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          },
+          "threshold": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "model": {
+        "accuracy_supplementary": {
+          "max": 0.7354368932038835,
+          "mean": 0.7157810006003894,
+          "min": 0.6947115384615384,
+          "runs": 3,
+          "std": 0.020399442733710377
+        },
+        "attention_prevalence": {
+          "max": 0.25565610859728505,
+          "mean": 0.24218441110574176,
+          "min": 0.22330097087378642,
+          "runs": 3,
+          "std": 0.016842771562095803
+        },
+        "balanced_accuracy": {
+          "max": 0.6929030056763548,
+          "mean": 0.6803978553746557,
+          "min": 0.6734943647954381,
+          "runs": 3,
+          "std": 0.01084932158920327
+        },
+        "brier": {
+          "max": 0.16887973604636813,
+          "mean": 0.1622391313481765,
+          "min": 0.1517356825579614,
+          "runs": 3,
+          "std": 0.009201674622741138
+        },
+        "budget_count": {
+          "max": 45.0,
+          "mean": 43.0,
+          "min": 42.0,
+          "runs": 3,
+          "std": 1.7320508075688772
+        },
+        "ece_10_bins": {
+          "max": 0.05987547159198122,
+          "mean": 0.04455366146600265,
+          "min": 0.027333905394760622,
+          "runs": 3,
+          "std": 0.01635359384815396
+        },
+        "f1_attention": {
+          "max": 0.5278810408921933,
+          "mean": 0.5099208762443723,
+          "min": 0.48826291079812206,
+          "runs": 3,
+          "std": 0.020066249178566902
+        },
+        "lift_at_budget": {
+          "max": 2.346902654867257,
+          "mean": 2.141195871119628,
+          "min": 1.7309292649098473,
+          "runs": 3,
+          "std": 0.3553017661203166
+        },
+        "log_loss": {
+          "max": 0.511442929662495,
+          "mean": 0.497753893545301,
+          "min": 0.472809577050921,
+          "runs": 3,
+          "std": 0.02163665837830213
+        },
+        "pr_auc_attention": {
+          "max": 0.49660685472359845,
+          "mean": 0.4483606247090159,
+          "min": 0.3949317161405186,
+          "runs": 3,
+          "std": 0.05103531688171466
+        },
+        "precision_at_budget": {
+          "max": 0.6,
+          "mean": 0.5174603174603174,
+          "min": 0.42857142857142855,
+          "runs": 3,
+          "std": 0.08589047148234084
+        },
+        "precision_attention": {
+          "max": 0.4583333333333333,
+          "mean": 0.43859874760750994,
+          "min": 0.42771084337349397,
+          "runs": 3,
+          "std": 0.017121099640450423
+        },
+        "recall_at_budget": {
+          "max": 0.2391304347826087,
+          "mean": 0.2176085898111173,
+          "min": 0.17475728155339806,
+          "runs": 3,
+          "std": 0.037110446200857836
+        },
+        "recall_attention": {
+          "max": 0.6893203883495146,
+          "mean": 0.6128695253713464,
+          "min": 0.5652173913043478,
+          "runs": 3,
+          "std": 0.06687610603999339
+        },
+        "roc_auc_supplementary": {
+          "max": 0.7396059782608695,
+          "mean": 0.7204936346116524,
+          "min": 0.7055840976948112,
+          "runs": 3,
+          "std": 0.01739597015504054
+        },
+        "rows": {
+          "max": 442.0,
+          "mean": 423.3333333333333,
+          "min": 412.0,
+          "runs": 3,
+          "std": 16.289055630494154
+        },
+        "threshold": {
+          "max": 0.31523000617971925,
+          "mean": 0.2748190756764956,
+          "min": 0.24378826776426332,
+          "runs": 3,
+          "std": 0.03663291582473512
+        }
+      },
+      "negative_control_train_label_permutation": {
+        "accuracy_supplementary": {
+          "max": 0.26018099547511314,
+          "mean": 0.24690561437420375,
+          "min": 0.22572815533980584,
+          "runs": 3,
+          "std": 0.018535956276854327
+        },
+        "attention_prevalence": {
+          "max": 0.25565610859728505,
+          "mean": 0.24218441110574176,
+          "min": 0.22330097087378642,
+          "runs": 3,
+          "std": 0.016842771562095803
+        },
+        "balanced_accuracy": {
+          "max": 0.5015625,
+          "mean": 0.4870514935298515,
+          "min": 0.47108427253409363,
+          "runs": 3,
+          "std": 0.015291206882529886
+        },
+        "brier": {
+          "max": 0.19692129220841698,
+          "mean": 0.18692781700085484,
+          "min": 0.1715156171771672,
+          "runs": 3,
+          "std": 0.013541935360110835
+        },
+        "budget_count": {
+          "max": 45.0,
+          "mean": 43.0,
+          "min": 42.0,
+          "runs": 3,
+          "std": 1.7320508075688772
+        },
+        "ece_10_bins": {
+          "max": 0.06318782566806848,
+          "mean": 0.056812269483437865,
+          "min": 0.049085203407322475,
+          "runs": 3,
+          "std": 0.007147791469916289
+        },
+        "f1_attention": {
+          "max": 0.38735177865612647,
+          "mean": 0.3791125795342207,
+          "min": 0.3658051689860835,
+          "runs": 3,
+          "std": 0.011633106737412564
+        },
+        "lift_at_budget": {
+          "max": 1.7060041407867492,
+          "mean": 1.1697111555070367,
+          "min": 0.6731391585760517,
+          "runs": 3,
+          "std": 0.5175768885449059
+        },
+        "log_loss": {
+          "max": 0.587520084108159,
+          "mean": 0.5639980125791276,
+          "min": 0.5276827178564384,
+          "runs": 3,
+          "std": 0.03190419282394869
+        },
+        "pr_auc_attention": {
+          "max": 0.34281011969244024,
+          "mean": 0.2830608228288627,
+          "min": 0.25259549776443835,
+          "runs": 3,
+          "std": 0.05174778020024896
+        },
+        "precision_at_budget": {
+          "max": 0.38095238095238093,
+          "mean": 0.2788359788359788,
+          "min": 0.16666666666666666,
+          "runs": 3,
+          "std": 0.1074959887025261
+        },
+        "precision_attention": {
+          "max": 0.24401913875598086,
+          "mean": 0.23701319988482447,
+          "min": 0.22384428223844283,
+          "runs": 3,
+          "std": 0.011412402876419968
+        },
+        "recall_at_budget": {
+          "max": 0.17391304347826086,
+          "mean": 0.11897281877147171,
+          "min": 0.06796116504854369,
+          "runs": 3,
+          "std": 0.05308507688774519
+        },
+        "recall_attention": {
+          "max": 1.0,
+          "mean": 0.9513703926454163,
+          "min": 0.9026548672566371,
+          "runs": 3,
+          "std": 0.04867262324589856
+        },
+        "roc_auc_supplementary": {
+          "max": 0.5620584239130435,
+          "mean": 0.5109301396357205,
+          "min": 0.48391478602361676,
+          "runs": 3,
+          "std": 0.04430216817039216
+        },
+        "rows": {
+          "max": 442.0,
+          "mean": 423.3333333333333,
+          "min": 412.0,
+          "runs": 3,
+          "std": 16.289055630494154
+        },
+        "threshold": {
+          "max": 0.15040867029628124,
+          "mean": 0.12387674591376775,
+          "min": 0.09756565797751703,
+          "runs": 3,
+          "std": 0.026422198324179334
+        }
+      },
+      "overlap_audit": {
+        "near_text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "product_group": {
+          "affected_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 72.0,
+            "mean": 72.0,
+            "min": 72.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "user_group": {
+          "affected_row_share": {
+            "max": 0.9404166666666667,
+            "mean": 0.9304166666666666,
+            "min": 0.9204166666666667,
+            "runs": 3,
+            "std": 0.010000000000000009
+          },
+          "affected_rows": {
+            "max": 2257.0,
+            "mean": 2233.0,
+            "min": 2209.0,
+            "runs": 3,
+            "std": 24.0
+          },
+          "shared_groups": {
+            "max": 368.0,
+            "mean": 364.3333333333333,
+            "min": 360.0,
+            "runs": 3,
+            "std": 4.041451884327381
+          }
+        }
+      },
+      "partition_summary": {
+        "test": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "labeled_rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        },
+        "train": {
+          "attention_prevalence": {
+            "max": 0.2554144884241972,
+            "mean": 0.24920770339006185,
+            "min": 0.23882783882783884,
+            "runs": 3,
+            "std": 0.009046556293358354
+          },
+          "labeled_rows": {
+            "max": 1405.0,
+            "mean": 1369.6666666666667,
+            "min": 1339.0,
+            "runs": 3,
+            "std": 33.24655370611116
+          }
+        },
+        "validation": {
+          "attention_prevalence": {
+            "max": 0.29550827423167847,
+            "mean": 0.27454357933449774,
+            "min": 0.2567237163814181,
+            "runs": 3,
+            "std": 0.019582593236788817
+          },
+          "labeled_rows": {
+            "max": 479.0,
+            "mean": 437.0,
+            "min": 409.0,
+            "runs": 3,
+            "std": 37.04051835490427
+          }
+        }
+      },
+      "stress": {
+        "body_truncated_8_tokens": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "brier": {
+            "max": 0.16928056587898263,
+            "mean": 0.16362908968033565,
+            "min": 0.15533391778181582,
+            "runs": 3,
+            "std": 0.00733955676466204
+          },
+          "delta_brier": {
+            "max": 0.0035982352238544124,
+            "mean": 0.0013899583321591396,
+            "min": 0.00017080994000850946,
+            "runs": 3,
+            "std": 0.0019158790177214006
+          },
+          "delta_lift_at_budget": {
+            "max": 0.17384464110127817,
+            "mean": 0.05446070641384737,
+            "min": -0.10662525879917206,
+            "runs": 3,
+            "std": 0.14481068917731862
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.018265247895464132,
+            "mean": 0.0070876222199532934,
+            "min": -0.009833541758968611,
+            "runs": 3,
+            "std": 0.014903914559372537
+          },
+          "delta_recall_at_budget": {
+            "max": 0.017699115044247787,
+            "mean": 0.005512762563644709,
+            "min": -0.010869565217391325,
+            "runs": 3,
+            "std": 0.014739302205814379
+          },
+          "lift_at_budget": {
+            "max": 2.520747295968535,
+            "mean": 2.1956565775334758,
+            "min": 1.8270920018492833,
+            "runs": 3,
+            "std": 0.3488651587117935
+          },
+          "pr_auc_attention": {
+            "max": 0.5148721026190626,
+            "mean": 0.4554482469289692,
+            "min": 0.40776287666388294,
+            "runs": 3,
+            "std": 0.0545109218527284
+          },
+          "recall_at_budget": {
+            "max": 0.25663716814159293,
+            "mean": 0.22312135237476202,
+            "min": 0.18446601941747573,
+            "runs": 3,
+            "std": 0.036359038143945734
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        },
+        "case_and_punctuation": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "brier": {
+            "max": 0.16887973604636813,
+            "mean": 0.1622391313481765,
+            "min": 0.1517356825579614,
+            "runs": 3,
+            "std": 0.009201674622741138
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.346902654867257,
+            "mean": 2.141195871119628,
+            "min": 1.7309292649098473,
+            "runs": 3,
+            "std": 0.3553017661203166
+          },
+          "pr_auc_attention": {
+            "max": 0.49660685472359845,
+            "mean": 0.4483606247090159,
+            "min": 0.3949317161405186,
+            "runs": 3,
+            "std": 0.05103531688171466
+          },
+          "recall_at_budget": {
+            "max": 0.2391304347826087,
+            "mean": 0.2176085898111173,
+            "min": 0.17475728155339806,
+            "runs": 3,
+            "std": 0.037110446200857836
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        },
+        "higher_attention_prior": {
+          "attention_prevalence": {
+            "max": 0.3333333333333333,
+            "mean": 0.3333333333333333,
+            "min": 0.3333333333333333,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20154625499975323,
+            "mean": 0.19656199098798136,
+            "min": 0.18855885664917418,
+            "runs": 3,
+            "std": 0.007000236604411775
+          },
+          "delta_brier": {
+            "max": 0.036823174091212774,
+            "mean": 0.03432285963980484,
+            "min": 0.0326665189533851,
+            "runs": 3,
+            "std": 0.0022031033272859805
+          },
+          "delta_lift_at_budget": {
+            "max": -0.09575569358178049,
+            "mean": -0.26026607984828093,
+            "min": -0.4057261842790214,
+            "runs": 3,
+            "std": 0.1558608713060738
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.16258592457775584,
+            "mean": 0.11000050018080004,
+            "min": 0.07287834739324528,
+            "runs": 3,
+            "std": 0.046810222470399676
+          },
+          "delta_recall_at_budget": {
+            "max": -0.010869565217391325,
+            "mean": -0.028081188806747943,
+            "min": -0.04424778761061948,
+            "runs": 3,
+            "std": 0.016713631865476097
+          },
+          "lift_at_budget": {
+            "max": 2.25,
+            "mean": 1.8809297912713472,
+            "min": 1.4516129032258065,
+            "runs": 3,
+            "std": 0.4025887925047285
+          },
+          "pr_auc_attention": {
+            "max": 0.6161292278406864,
+            "mean": 0.5583611248898159,
+            "min": 0.4894689447119176,
+            "runs": 3,
+            "std": 0.06405868911537002
+          },
+          "recall_at_budget": {
+            "max": 0.22826086956521738,
+            "mean": 0.18952740100436938,
+            "min": 0.14563106796116504,
+            "runs": 3,
+            "std": 0.04155613559426147
+          },
+          "rows": {
+            "max": 339.0,
+            "mean": 308.0,
+            "min": 276.0,
+            "runs": 3,
+            "std": 31.51190251317746
+          }
+        },
+        "missing_body_20pct": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "brier": {
+            "max": 0.16815384920693952,
+            "mean": 0.1621927477400089,
+            "min": 0.15319709842570203,
+            "runs": 3,
+            "std": 0.007926692813621822
+          },
+          "delta_brier": {
+            "max": 0.001461415867740623,
+            "mean": -4.638360816761981e-05,
+            "min": -0.0008746798528148636,
+            "runs": 3,
+            "std": 0.001307910274013481
+          },
+          "delta_lift_at_budget": {
+            "max": -0.08692232055063931,
+            "mean": -0.16067859672270637,
+            "min": -0.2884882108183078,
+            "runs": 3,
+            "std": 0.11112391522690462
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.017479287585829006,
+            "mean": 0.002266465162636011,
+            "min": -0.020473111233269337,
+            "runs": 3,
+            "std": 0.020064524989525174
+          },
+          "delta_recall_at_budget": {
+            "max": -0.008849557522123908,
+            "mean": -0.016281778777249418,
+            "min": -0.029126213592233025,
+            "runs": 3,
+            "std": 0.01116936600973874
+          },
+          "lift_at_budget": {
+            "max": 2.2599803343166176,
+            "mean": 1.980517274396922,
+            "min": 1.4424410540915396,
+            "runs": 3,
+            "std": 0.46610427344236965
+          },
+          "pr_auc_attention": {
+            "max": 0.5064000738589468,
+            "mean": 0.45062708987165184,
+            "min": 0.4124110037263476,
+            "runs": 3,
+            "std": 0.049393013903519155
+          },
+          "recall_at_budget": {
+            "max": 0.23008849557522124,
+            "mean": 0.20132681103386788,
+            "min": 0.14563106796116504,
+            "runs": 3,
+            "std": 0.04824258390181341
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        },
+        "missing_summary_20pct": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "brier": {
+            "max": 0.17157722665546193,
+            "mean": 0.1639069435820912,
+            "min": 0.1533083026651657,
+            "runs": 3,
+            "std": 0.009479971291398341
+          },
+          "delta_brier": {
+            "max": 0.0026974906090938,
+            "mean": 0.001667812233914684,
+            "min": 0.000733325985445954,
+            "runs": 3,
+            "std": 0.000985536312338696
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": -0.154110950639862,
+            "min": -0.2884882108183078,
+            "runs": 3,
+            "std": 0.14525297191351141
+          },
+          "delta_pr_auc_attention": {
+            "max": -0.00286916913344204,
+            "mean": -0.005506765297451384,
+            "min": -0.00887901419358117,
+            "runs": 3,
+            "std": 0.0030715379517969
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": -0.015608442878826937,
+            "min": -0.029126213592233025,
+            "runs": 3,
+            "std": 0.014675226135652699
+          },
+          "lift_at_budget": {
+            "max": 2.3457556935817805,
+            "mean": 1.9870849204797665,
+            "min": 1.4424410540915396,
+            "runs": 3,
+            "std": 0.4795141583406873
+          },
+          "pr_auc_attention": {
+            "max": 0.4937376855901564,
+            "mean": 0.44285385941156447,
+            "min": 0.3860527019469374,
+            "runs": 3,
+            "std": 0.05408581175060242
+          },
+          "recall_at_budget": {
+            "max": 0.2391304347826087,
+            "mean": 0.20200014693229038,
+            "min": 0.14563106796116504,
+            "runs": 3,
+            "std": 0.04962994269435792
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        },
+        "token_dropout_25pct": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "brier": {
+            "max": 0.16673484542717476,
+            "mean": 0.16234947515736473,
+            "min": 0.15483873608087673,
+            "runs": 3,
+            "std": 0.006534929382027527
+          },
+          "delta_brier": {
+            "max": 0.0031030535229153167,
+            "mean": 0.00011034380918821991,
+            "min": -0.0021448906191933736,
+            "runs": 3,
+            "std": 0.002700579896437949
+          },
+          "delta_lift_at_budget": {
+            "max": 0.10662525879917206,
+            "mean": 0.03246161413679179,
+            "min": -0.096162736939436,
+            "runs": 3,
+            "std": 0.11182673746131513
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0067541940502798825,
+            "mean": -0.010847665474367996,
+            "min": -0.04127220885143973,
+            "runs": 3,
+            "std": 0.02645656364314882
+          },
+          "delta_recall_at_budget": {
+            "max": 0.010869565217391297,
+            "mean": 0.0033367949584791703,
+            "min": -0.009708737864077666,
+            "runs": 3,
+            "std": 0.011342819435243633
+          },
+          "lift_at_budget": {
+            "max": 2.4523809523809526,
+            "mean": 2.17365748525642,
+            "min": 1.6347665279704113,
+            "runs": 3,
+            "std": 0.4667854742317251
+          },
+          "pr_auc_attention": {
+            "max": 0.4985818731016543,
+            "mean": 0.4375129592346479,
+            "min": 0.40168591019079847,
+            "runs": 3,
+            "std": 0.05315139426128338
+          },
+          "recall_at_budget": {
+            "max": 0.25,
+            "mean": 0.22094538476959646,
+            "min": 0.1650485436893204,
+            "runs": 3,
+            "std": 0.048420721790964676
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        },
+        "unknown_tokens": {
+          "attention_prevalence": {
+            "max": 0.25565610859728505,
+            "mean": 0.24218441110574176,
+            "min": 0.22330097087378642,
+            "runs": 3,
+            "std": 0.016842771562095803
+          },
+          "brier": {
+            "max": 0.16887973604636813,
+            "mean": 0.1622391313481765,
+            "min": 0.1517356825579614,
+            "runs": 3,
+            "std": 0.009201674622741138
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.346902654867257,
+            "mean": 2.141195871119628,
+            "min": 1.7309292649098473,
+            "runs": 3,
+            "std": 0.3553017661203166
+          },
+          "pr_auc_attention": {
+            "max": 0.49660685472359845,
+            "mean": 0.4483606247090159,
+            "min": 0.3949317161405186,
+            "runs": 3,
+            "std": 0.05103531688171466
+          },
+          "recall_at_budget": {
+            "max": 0.2391304347826087,
+            "mean": 0.2176085898111173,
+            "min": 0.17475728155339806,
+            "runs": 3,
+            "std": 0.037110446200857836
+          },
+          "rows": {
+            "max": 442.0,
+            "mean": 423.3333333333333,
+            "min": 412.0,
+            "runs": 3,
+            "std": 16.289055630494154
+          }
+        }
+      }
+    },
+    "forward_time": {
+      "baseline_notes": {
+        "seeded_random_score": "Uses independent seeded uniform scores; its validation threshold and ranking metrics are chance diagnostics.",
+        "train_prevalence_probability_and_majority_decision": "Uses the training prevalence as a constant probability and a fixed 0.50 decision threshold. Ranking-at-budget metrics are undefined because all scores tie, so they are intentionally omitted."
+      },
+      "baselines": {
+        "seeded_random_score": {
+          "accuracy_supplementary": {
+            "max": 0.3825503355704698,
+            "mean": 0.3825503355704698,
+            "min": 0.3825503355704698,
+            "runs": 1,
+            "std": 0.0
+          },
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "balanced_accuracy": {
+            "max": 0.5112916842549599,
+            "mean": 0.5112916842549599,
+            "min": 0.5112916842549599,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.3116866834700366,
+            "mean": 0.3116866834700366,
+            "min": 0.3116866834700366,
+            "runs": 1,
+            "std": 0.0
+          },
+          "budget_count": {
+            "max": 45.0,
+            "mean": 45.0,
+            "min": 45.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "ece_10_bins": {
+            "max": 0.26100784205020633,
+            "mean": 0.26100784205020633,
+            "min": 0.26100784205020633,
+            "runs": 1,
+            "std": 0.0
+          },
+          "f1_attention": {
+            "max": 0.4588235294117647,
+            "mean": 0.4588235294117647,
+            "min": 0.4588235294117647,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 0.9357487922705313,
+            "mean": 0.9357487922705313,
+            "min": 0.9357487922705313,
+            "runs": 1,
+            "std": 0.0
+          },
+          "log_loss": {
+            "max": 0.9594490922287517,
+            "mean": 0.9594490922287517,
+            "min": 0.9594490922287517,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.332151072526353,
+            "mean": 0.332151072526353,
+            "min": 0.332151072526353,
+            "runs": 1,
+            "std": 0.0
+          },
+          "precision_at_budget": {
+            "max": 0.28888888888888886,
+            "mean": 0.28888888888888886,
+            "min": 0.28888888888888886,
+            "runs": 1,
+            "std": 0.0
+          },
+          "precision_attention": {
+            "max": 0.31451612903225806,
+            "mean": 0.31451612903225806,
+            "min": 0.31451612903225806,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.09420289855072464,
+            "mean": 0.09420289855072464,
+            "min": 0.09420289855072464,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_attention": {
+            "max": 0.8478260869565217,
+            "mean": 0.8478260869565217,
+            "min": 0.8478260869565217,
+            "runs": 1,
+            "std": 0.0
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5463158388443319,
+            "mean": 0.5463158388443319,
+            "min": 0.5463158388443319,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "threshold": {
+            "max": 0.17004148833408161,
+            "mean": 0.17004148833408161,
+            "min": 0.17004148833408161,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "train_prevalence_probability_and_majority_decision": {
+          "accuracy_supplementary": {
+            "max": 0.6912751677852349,
+            "mean": 0.6912751677852349,
+            "min": 0.6912751677852349,
+            "runs": 1,
+            "std": 0.0
+          },
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "balanced_accuracy": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.2182775496993809,
+            "mean": 0.2182775496993809,
+            "min": 0.2182775496993809,
+            "runs": 1,
+            "std": 0.0
+          },
+          "ece_10_bins": {
+            "max": 0.06974051556054556,
+            "mean": 0.06974051556054556,
+            "min": 0.06974051556054556,
+            "runs": 1,
+            "std": 0.0
+          },
+          "f1_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "log_loss": {
+            "max": 0.6306837132854397,
+            "mean": 0.6306837132854397,
+            "min": 0.6306837132854397,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "precision_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "threshold": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 1,
+            "std": 0.0
+          }
+        }
+      },
+      "model": {
+        "accuracy_supplementary": {
+          "max": 0.7293064876957495,
+          "mean": 0.7293064876957495,
+          "min": 0.7293064876957495,
+          "runs": 1,
+          "std": 0.0
+        },
+        "attention_prevalence": {
+          "max": 0.3087248322147651,
+          "mean": 0.3087248322147651,
+          "min": 0.3087248322147651,
+          "runs": 1,
+          "std": 0.0
+        },
+        "balanced_accuracy": {
+          "max": 0.6478120163219361,
+          "mean": 0.6478120163219361,
+          "min": 0.6478120163219361,
+          "runs": 1,
+          "std": 0.0
+        },
+        "brier": {
+          "max": 0.1956608045487997,
+          "mean": 0.1956608045487997,
+          "min": 0.1956608045487997,
+          "runs": 1,
+          "std": 0.0
+        },
+        "budget_count": {
+          "max": 45.0,
+          "mean": 45.0,
+          "min": 45.0,
+          "runs": 1,
+          "std": 0.0
+        },
+        "ece_10_bins": {
+          "max": 0.06105481111188236,
+          "mean": 0.06105481111188236,
+          "min": 0.06105481111188236,
+          "runs": 1,
+          "std": 0.0
+        },
+        "f1_attention": {
+          "max": 0.4979253112033195,
+          "mean": 0.4979253112033195,
+          "min": 0.4979253112033195,
+          "runs": 1,
+          "std": 0.0
+        },
+        "lift_at_budget": {
+          "max": 1.943478260869565,
+          "mean": 1.943478260869565,
+          "min": 1.943478260869565,
+          "runs": 1,
+          "std": 0.0
+        },
+        "log_loss": {
+          "max": 0.5779392751928739,
+          "mean": 0.5779392751928739,
+          "min": 0.5779392751928739,
+          "runs": 1,
+          "std": 0.0
+        },
+        "pr_auc_attention": {
+          "max": 0.51464294068791,
+          "mean": 0.51464294068791,
+          "min": 0.51464294068791,
+          "runs": 1,
+          "std": 0.0
+        },
+        "precision_at_budget": {
+          "max": 0.6,
+          "mean": 0.6,
+          "min": 0.6,
+          "runs": 1,
+          "std": 0.0
+        },
+        "precision_attention": {
+          "max": 0.5825242718446602,
+          "mean": 0.5825242718446602,
+          "min": 0.5825242718446602,
+          "runs": 1,
+          "std": 0.0
+        },
+        "recall_at_budget": {
+          "max": 0.1956521739130435,
+          "mean": 0.1956521739130435,
+          "min": 0.1956521739130435,
+          "runs": 1,
+          "std": 0.0
+        },
+        "recall_attention": {
+          "max": 0.43478260869565216,
+          "mean": 0.43478260869565216,
+          "min": 0.43478260869565216,
+          "runs": 1,
+          "std": 0.0
+        },
+        "roc_auc_supplementary": {
+          "max": 0.68658834013414,
+          "mean": 0.68658834013414,
+          "min": 0.68658834013414,
+          "runs": 1,
+          "std": 0.0
+        },
+        "rows": {
+          "max": 447.0,
+          "mean": 447.0,
+          "min": 447.0,
+          "runs": 1,
+          "std": 0.0
+        },
+        "threshold": {
+          "max": 0.31859444911886475,
+          "mean": 0.31859444911886475,
+          "min": 0.31859444911886475,
+          "runs": 1,
+          "std": 0.0
+        }
+      },
+      "negative_control_train_label_permutation": null,
+      "overlap_audit": {
+        "near_text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.22583333333333333,
+            "mean": 0.22583333333333333,
+            "min": 0.22583333333333333,
+            "runs": 1,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 542.0,
+            "mean": 542.0,
+            "min": 542.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 185.0,
+            "mean": 185.0,
+            "min": 185.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "product_group": {
+          "affected_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 72.0,
+            "mean": 72.0,
+            "min": 72.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.22583333333333333,
+            "mean": 0.22583333333333333,
+            "min": 0.22583333333333333,
+            "runs": 1,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 542.0,
+            "mean": 542.0,
+            "min": 542.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 185.0,
+            "mean": 185.0,
+            "min": 185.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "user_group": {
+          "affected_row_share": {
+            "max": 0.9408333333333333,
+            "mean": 0.9408333333333333,
+            "min": 0.9408333333333333,
+            "runs": 1,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 2258.0,
+            "mean": 2258.0,
+            "min": 2258.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 372.0,
+            "mean": 372.0,
+            "min": 372.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        }
+      },
+      "partition_summary": {
+        "test": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "labeled_rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "train": {
+          "attention_prevalence": {
+            "max": 0.23898431665421957,
+            "mean": 0.23898431665421957,
+            "min": 0.23898431665421957,
+            "runs": 1,
+            "std": 0.0
+          },
+          "labeled_rows": {
+            "max": 1339.0,
+            "mean": 1339.0,
+            "min": 1339.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "validation": {
+          "attention_prevalence": {
+            "max": 0.23873873873873874,
+            "mean": 0.23873873873873874,
+            "min": 0.23873873873873874,
+            "runs": 1,
+            "std": 0.0
+          },
+          "labeled_rows": {
+            "max": 444.0,
+            "mean": 444.0,
+            "min": 444.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        }
+      },
+      "stress": {
+        "body_truncated_8_tokens": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.19048569037851534,
+            "mean": 0.19048569037851534,
+            "min": 0.19048569037851534,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": -0.005175114170284351,
+            "mean": -0.005175114170284351,
+            "min": -0.005175114170284351,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.14396135265700516,
+            "mean": 0.14396135265700516,
+            "min": 0.14396135265700516,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.005644936662430933,
+            "mean": 0.005644936662430933,
+            "min": 0.005644936662430933,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.014492753623188387,
+            "mean": 0.014492753623188387,
+            "min": 0.014492753623188387,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.0874396135265703,
+            "mean": 2.0874396135265703,
+            "min": 2.0874396135265703,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.520287877350341,
+            "mean": 0.520287877350341,
+            "min": 0.520287877350341,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.21014492753623187,
+            "mean": 0.21014492753623187,
+            "min": 0.21014492753623187,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "case_and_punctuation": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.1956608045487997,
+            "mean": 0.1956608045487997,
+            "min": 0.1956608045487997,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 1.943478260869565,
+            "mean": 1.943478260869565,
+            "min": 1.943478260869565,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.51464294068791,
+            "mean": 0.51464294068791,
+            "min": 0.51464294068791,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.1956521739130435,
+            "mean": 0.1956521739130435,
+            "min": 0.1956521739130435,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "higher_attention_prior": {
+          "attention_prevalence": {
+            "max": 0.3333333333333333,
+            "mean": 0.3333333333333333,
+            "min": 0.3333333333333333,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20664653524920373,
+            "mean": 0.20664653524920373,
+            "min": 0.20664653524920373,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": 0.01098573070040404,
+            "mean": 0.01098573070040404,
+            "min": 0.01098573070040404,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": -0.0863354037267079,
+            "mean": -0.0863354037267079,
+            "min": -0.0863354037267079,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.026067675625264908,
+            "mean": 0.026067675625264908,
+            "min": 0.026067675625264908,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": -0.007246376811594207,
+            "mean": -0.007246376811594207,
+            "min": -0.007246376811594207,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 1.8571428571428572,
+            "mean": 1.8571428571428572,
+            "min": 1.8571428571428572,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.540710616313175,
+            "mean": 0.540710616313175,
+            "min": 0.540710616313175,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.18840579710144928,
+            "mean": 0.18840579710144928,
+            "min": 0.18840579710144928,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 414.0,
+            "mean": 414.0,
+            "min": 414.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "missing_body_20pct": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.19295683037110525,
+            "mean": 0.19295683037110525,
+            "min": 0.19295683037110525,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": -0.0027039741776944404,
+            "mean": -0.0027039741776944404,
+            "min": -0.0027039741776944404,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.07198067632850269,
+            "mean": 0.07198067632850269,
+            "min": 0.07198067632850269,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0021383387531352938,
+            "mean": 0.0021383387531352938,
+            "min": 0.0021383387531352938,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.007246376811594207,
+            "mean": 0.007246376811594207,
+            "min": 0.007246376811594207,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.015458937198068,
+            "mean": 2.015458937198068,
+            "min": 2.015458937198068,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.5167812794410453,
+            "mean": 0.5167812794410453,
+            "min": 0.5167812794410453,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.2028985507246377,
+            "mean": 0.2028985507246377,
+            "min": 0.2028985507246377,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "missing_summary_20pct": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20140198799368705,
+            "mean": 0.20140198799368705,
+            "min": 0.20140198799368705,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": 0.00574118344488736,
+            "mean": 0.00574118344488736,
+            "min": 0.00574118344488736,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": -0.07198067632850247,
+            "mean": -0.07198067632850247,
+            "min": -0.07198067632850247,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": -0.03269755671950181,
+            "mean": -0.03269755671950181,
+            "min": -0.03269755671950181,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": -0.007246376811594207,
+            "mean": -0.007246376811594207,
+            "min": -0.007246376811594207,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 1.8714975845410626,
+            "mean": 1.8714975845410626,
+            "min": 1.8714975845410626,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.48194538396840825,
+            "mean": 0.48194538396840825,
+            "min": 0.48194538396840825,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.18840579710144928,
+            "mean": 0.18840579710144928,
+            "min": 0.18840579710144928,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "token_dropout_25pct": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.19466587247238754,
+            "mean": 0.19466587247238754,
+            "min": 0.19466587247238754,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": -0.0009949320764121583,
+            "mean": -0.0009949320764121583,
+            "min": -0.0009949320764121583,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": -0.28792270531400965,
+            "mean": -0.28792270531400965,
+            "min": -0.28792270531400965,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.005852536403192943,
+            "mean": 0.005852536403192943,
+            "min": 0.005852536403192943,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": -0.02898550724637683,
+            "mean": -0.02898550724637683,
+            "min": -0.02898550724637683,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 1.6555555555555554,
+            "mean": 1.6555555555555554,
+            "min": 1.6555555555555554,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.520495477091103,
+            "mean": 0.520495477091103,
+            "min": 0.520495477091103,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.16666666666666666,
+            "mean": 0.16666666666666666,
+            "min": 0.16666666666666666,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        },
+        "unknown_tokens": {
+          "attention_prevalence": {
+            "max": 0.3087248322147651,
+            "mean": 0.3087248322147651,
+            "min": 0.3087248322147651,
+            "runs": 1,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.1956608045487997,
+            "mean": 0.1956608045487997,
+            "min": 0.1956608045487997,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 1,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 1.943478260869565,
+            "mean": 1.943478260869565,
+            "min": 1.943478260869565,
+            "runs": 1,
+            "std": 0.0
+          },
+          "pr_auc_attention": {
+            "max": 0.51464294068791,
+            "mean": 0.51464294068791,
+            "min": 0.51464294068791,
+            "runs": 1,
+            "std": 0.0
+          },
+          "recall_at_budget": {
+            "max": 0.1956521739130435,
+            "mean": 0.1956521739130435,
+            "min": 0.1956521739130435,
+            "runs": 1,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 447.0,
+            "mean": 447.0,
+            "min": 447.0,
+            "runs": 1,
+            "std": 0.0
+          }
+        }
+      },
+      "time_bounds": {
+        "test": {
+          "max": "2027-04-14T12:00:00+00:00",
+          "min": "2026-08-18T00:00:00+00:00"
+        },
+        "train": {
+          "max": "2025-12-20T12:00:00+00:00",
+          "min": "2024-01-01T00:00:00+00:00"
+        },
+        "validation": {
+          "max": "2026-08-17T12:00:00+00:00",
+          "min": "2025-12-21T00:00:00+00:00"
+        }
+      }
+    },
+    "product_group": {
+      "baseline_notes": {
+        "seeded_random_score": "Uses independent seeded uniform scores; its validation threshold and ranking metrics are chance diagnostics.",
+        "train_prevalence_probability_and_majority_decision": "Uses the training prevalence as a constant probability and a fixed 0.50 decision threshold. Ranking-at-budget metrics are undefined because all scores tie, so they are intentionally omitted."
+      },
+      "baselines": {
+        "seeded_random_score": {
+          "accuracy_supplementary": {
+            "max": 0.2735294117647059,
+            "mean": 0.2619386600462752,
+            "min": 0.2421340629274966,
+            "runs": 3,
+            "std": 0.01723419346381279
+          },
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "balanced_accuracy": {
+            "max": 0.5095796130952381,
+            "mean": 0.5061246154616281,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.005318589218427036
+          },
+          "brier": {
+            "max": 0.3346376143091076,
+            "mean": 0.32993217015206416,
+            "min": 0.32449752884204597,
+            "runs": 3,
+            "std": 0.005109220066287854
+          },
+          "budget_count": {
+            "max": 74.0,
+            "mean": 51.333333333333336,
+            "min": 34.0,
+            "runs": 3,
+            "std": 20.526405757787536
+          },
+          "ece_10_bins": {
+            "max": 0.3278158272726707,
+            "mean": 0.314525379419969,
+            "min": 0.30615027475864726,
+            "runs": 3,
+            "std": 0.011639136155714522
+          },
+          "f1_attention": {
+            "max": 0.39902676399026765,
+            "mean": 0.3914052354391302,
+            "min": 0.3853211009174312,
+            "runs": 3,
+            "std": 0.006980973096054953
+          },
+          "lift_at_budget": {
+            "max": 0.9487708047030081,
+            "mean": 0.8076366273177914,
+            "min": 0.6408057439170324,
+            "runs": 3,
+            "std": 0.15558232608900127
+          },
+          "log_loss": {
+            "max": 1.0139317782675816,
+            "mean": 1.0049793974328667,
+            "min": 0.9922335646139866,
+            "runs": 3,
+            "std": 0.011335600002046252
+          },
+          "pr_auc_attention": {
+            "max": 0.2505176741694485,
+            "mean": 0.24498350920762468,
+            "min": 0.23637942838449638,
+            "runs": 3,
+            "std": 0.007552535072116239
+          },
+          "precision_at_budget": {
+            "max": 0.22972972972972974,
+            "mean": 0.19592866523812816,
+            "min": 0.15217391304347827,
+            "runs": 3,
+            "std": 0.039724464749512
+          },
+          "precision_attention": {
+            "max": 0.25076452599388377,
+            "mean": 0.24457475899825828,
+            "min": 0.2408256880733945,
+            "runs": 3,
+            "std": 0.005400265992042667
+          },
+          "recall_at_budget": {
+            "max": 0.096045197740113,
+            "mean": 0.08119957151989494,
+            "min": 0.06422018348623854,
+            "runs": 3,
+            "std": 0.016019444050034762
+          },
+          "recall_attention": {
+            "max": 1.0,
+            "mean": 0.9798310761613513,
+            "min": 0.963302752293578,
+            "runs": 3,
+            "std": 0.018617531345953914
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5115858453473132,
+            "mean": 0.5079773342715379,
+            "min": 0.5020461309523809,
+            "runs": 3,
+            "std": 0.0051766506669195704
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          },
+          "threshold": {
+            "max": 0.049957672916735474,
+            "mean": 0.030139843129975235,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.026530176034225868
+          }
+        },
+        "train_prevalence_probability_and_majority_decision": {
+          "accuracy_supplementary": {
+            "max": 0.7625272331154684,
+            "mean": 0.7577781155528532,
+            "min": 0.7529411764705882,
+            "runs": 3,
+            "std": 0.004793631709278286
+          },
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "balanced_accuracy": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.18609375122598062,
+            "mean": 0.18376806356549039,
+            "min": 0.18159800044404167,
+            "runs": 3,
+            "std": 0.0022519120811412873
+          },
+          "ece_10_bins": {
+            "max": 0.02277166158419583,
+            "mean": 0.013890903458601778,
+            "min": 0.008543417366946748,
+            "runs": 3,
+            "std": 0.007744271549073042
+          },
+          "f1_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "log_loss": {
+            "max": 0.5592740412628592,
+            "mean": 0.5542037151410156,
+            "min": 0.5495229051458256,
+            "runs": 3,
+            "std": 0.004887223752082729
+          },
+          "pr_auc_attention": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "precision_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "recall_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          },
+          "threshold": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "model": {
+        "accuracy_supplementary": {
+          "max": 0.7205882352941176,
+          "mean": 0.679742784279948,
+          "min": 0.6100217864923747,
+          "runs": 3,
+          "std": 0.0606760480029342
+        },
+        "attention_prevalence": {
+          "max": 0.24705882352941178,
+          "mean": 0.24222188444714665,
+          "min": 0.2374727668845316,
+          "runs": 3,
+          "std": 0.004793631709278272
+        },
+        "balanced_accuracy": {
+          "max": 0.7224702380952381,
+          "mean": 0.6839761232655425,
+          "min": 0.6578198617144955,
+          "runs": 3,
+          "std": 0.034045333882736666
+        },
+        "brier": {
+          "max": 0.17050483795218338,
+          "mean": 0.16043973810082227,
+          "min": 0.15003055114617875,
+          "runs": 3,
+          "std": 0.010241479483190787
+        },
+        "budget_count": {
+          "max": 74.0,
+          "mean": 51.333333333333336,
+          "min": 34.0,
+          "runs": 3,
+          "std": 20.526405757787536
+        },
+        "ece_10_bins": {
+          "max": 0.06626608741976539,
+          "mean": 0.04926470920722062,
+          "min": 0.02849319550446584,
+          "runs": 3,
+          "std": 0.019166592866812073
+        },
+        "f1_attention": {
+          "max": 0.5622119815668203,
+          "mean": 0.5113307654709428,
+          "min": 0.48175182481751827,
+          "runs": 3,
+          "std": 0.04425832588677705
+        },
+        "lift_at_budget": {
+          "max": 2.738095238095238,
+          "mean": 2.197929236539771,
+          "min": 1.841731562070545,
+          "runs": 3,
+          "std": 0.4756576699185117
+        },
+        "log_loss": {
+          "max": 0.5204302388628556,
+          "mean": 0.4949920113486003,
+          "min": 0.4703563636547099,
+          "runs": 3,
+          "std": 0.025046583506863344
+        },
+        "pr_auc_attention": {
+          "max": 0.5644653849810229,
+          "mean": 0.46241462982711573,
+          "min": 0.3826691949207166,
+          "runs": 3,
+          "std": 0.092927978368297
+        },
+        "precision_at_budget": {
+          "max": 0.6764705882352942,
+          "mean": 0.5335591345821525,
+          "min": 0.44594594594594594,
+          "runs": 3,
+          "std": 0.1248151683933903
+        },
+        "precision_attention": {
+          "max": 0.45864661654135336,
+          "mean": 0.4123651468149076,
+          "min": 0.35537190082644626,
+          "runs": 3,
+          "std": 0.05246401947539217
+        },
+        "recall_at_budget": {
+          "max": 0.27380952380952384,
+          "mean": 0.2206950213869822,
+          "min": 0.1864406779661017,
+          "runs": 3,
+          "std": 0.046638053177409426
+        },
+        "recall_attention": {
+          "max": 0.7889908256880734,
+          "mean": 0.6915011119256183,
+          "min": 0.559322033898305,
+          "runs": 3,
+          "std": 0.11869899947079587
+        },
+        "roc_auc_supplementary": {
+          "max": 0.7578822544642858,
+          "mean": 0.7142144469031205,
+          "min": 0.6613534846723367,
+          "runs": 3,
+          "std": 0.04891662722399643
+        },
+        "rows": {
+          "max": 731.0,
+          "mean": 510.0,
+          "min": 340.0,
+          "runs": 3,
+          "std": 200.42704408337713
+        },
+        "threshold": {
+          "max": 0.2906943005159247,
+          "mean": 0.2415804541657569,
+          "min": 0.19164781658484512,
+          "runs": 3,
+          "std": 0.04952831825417717
+        }
+      },
+      "negative_control_train_label_permutation": null,
+      "overlap_audit": {
+        "near_text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.31958333333333333,
+            "mean": 0.3086111111111111,
+            "min": 0.3025,
+            "runs": 3,
+            "std": 0.00952275539801219
+          },
+          "affected_rows": {
+            "max": 767.0,
+            "mean": 740.6666666666666,
+            "min": 726.0,
+            "runs": 3,
+            "std": 22.854612955229264
+          },
+          "shared_groups": {
+            "max": 264.0,
+            "mean": 254.0,
+            "min": 248.0,
+            "runs": 3,
+            "std": 8.717797887081348
+          }
+        },
+        "product_group": {
+          "affected_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.31958333333333333,
+            "mean": 0.3086111111111111,
+            "min": 0.3025,
+            "runs": 3,
+            "std": 0.00952275539801219
+          },
+          "affected_rows": {
+            "max": 767.0,
+            "mean": 740.6666666666666,
+            "min": 726.0,
+            "runs": 3,
+            "std": 22.854612955229264
+          },
+          "shared_groups": {
+            "max": 264.0,
+            "mean": 254.0,
+            "min": 248.0,
+            "runs": 3,
+            "std": 8.717797887081348
+          }
+        },
+        "user_group": {
+          "affected_row_share": {
+            "max": 0.9629166666666666,
+            "mean": 0.928611111111111,
+            "min": 0.90875,
+            "runs": 3,
+            "std": 0.02983267379779972
+          },
+          "affected_rows": {
+            "max": 2311.0,
+            "mean": 2228.6666666666665,
+            "min": 2181.0,
+            "runs": 3,
+            "std": 71.59841711471933
+          },
+          "shared_groups": {
+            "max": 381.0,
+            "mean": 365.3333333333333,
+            "min": 355.0,
+            "runs": 3,
+            "std": 13.79613472438325
+          }
+        }
+      },
+      "partition_summary": {
+        "test": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "labeled_rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        },
+        "train": {
+          "attention_prevalence": {
+            "max": 0.26024442846872753,
+            "mean": 0.2561127879057485,
+            "min": 0.25249169435215946,
+            "runs": 3,
+            "std": 0.003901501666941515
+          },
+          "labeled_rows": {
+            "max": 1428.0,
+            "mean": 1341.0,
+            "min": 1204.0,
+            "runs": 3,
+            "std": 120.07914056987583
+          }
+        },
+        "validation": {
+          "attention_prevalence": {
+            "max": 0.28135593220338984,
+            "mean": 0.25833684107546734,
+            "min": 0.24473684210526317,
+            "runs": 3,
+            "std": 0.020044423481616367
+          },
+          "labeled_rows": {
+            "max": 462.0,
+            "mean": 379.0,
+            "min": 295.0,
+            "runs": 3,
+            "std": 83.50449089719666
+          }
+        }
+      },
+      "stress": {
+        "body_truncated_8_tokens": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "brier": {
+            "max": 0.17044040971945953,
+            "mean": 0.16211725278790945,
+            "min": 0.15252347463178031,
+            "runs": 3,
+            "std": 0.009025796333636761
+          },
+          "delta_brier": {
+            "max": 0.002604048808383802,
+            "mean": 0.0016775146870871744,
+            "min": -6.442823272384546e-05,
+            "runs": 3,
+            "std": 0.0015095896996371798
+          },
+          "delta_lift_at_budget": {
+            "max": 0.16743014200641326,
+            "mean": -0.03272301247800365,
+            "min": -0.3571428571428572,
+            "runs": 3,
+            "std": 0.28350637660450534
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.009356832529779036,
+            "mean": -0.010249876331551536,
+            "min": -0.03448518795346056,
+            "runs": 3,
+            "std": 0.022284493771446232
+          },
+          "delta_recall_at_budget": {
+            "max": 0.01694915254237289,
+            "mean": -0.0031969404151024525,
+            "min": -0.035714285714285754,
+            "runs": 3,
+            "std": 0.028427897312848963
+          },
+          "lift_at_budget": {
+            "max": 2.380952380952381,
+            "mean": 2.1652062240617673,
+            "min": 2.0091617040769583,
+            "runs": 3,
+            "std": 0.19295152484444272
+          },
+          "pr_auc_attention": {
+            "max": 0.5299801970275624,
+            "mean": 0.45216475349556423,
+            "min": 0.39202602745049564,
+            "runs": 3,
+            "std": 0.0706554172145283
+          },
+          "recall_at_budget": {
+            "max": 0.23809523809523808,
+            "mean": 0.21749808097187975,
+            "min": 0.2033898305084746,
+            "runs": 3,
+            "std": 0.01823994959346197
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        },
+        "case_and_punctuation": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "brier": {
+            "max": 0.17050483795218338,
+            "mean": 0.16043973810082227,
+            "min": 0.15003055114617875,
+            "runs": 3,
+            "std": 0.010241479483190787
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.738095238095238,
+            "mean": 2.197929236539771,
+            "min": 1.841731562070545,
+            "runs": 3,
+            "std": 0.4756576699185117
+          },
+          "pr_auc_attention": {
+            "max": 0.5644653849810229,
+            "mean": 0.46241462982711573,
+            "min": 0.3826691949207166,
+            "runs": 3,
+            "std": 0.092927978368297
+          },
+          "recall_at_budget": {
+            "max": 0.27380952380952384,
+            "mean": 0.2206950213869822,
+            "min": 0.1864406779661017,
+            "runs": 3,
+            "std": 0.046638053177409426
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        },
+        "higher_attention_prior": {
+          "attention_prevalence": {
+            "max": 0.3333333333333333,
+            "mean": 0.3333333333333333,
+            "min": 0.3333333333333333,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20783500461274737,
+            "mean": 0.19647941799336002,
+            "min": 0.1805606025647376,
+            "runs": 3,
+            "std": 0.014198258507408391
+          },
+          "delta_brier": {
+            "max": 0.040258821598490424,
+            "mean": 0.03603967989253776,
+            "min": 0.030530051418558857,
+            "runs": 3,
+            "std": 0.004991118048826287
+          },
+          "delta_lift_at_budget": {
+            "max": -0.23062045095943362,
+            "mean": -0.3846684232789577,
+            "min": -0.5457875457875456,
+            "runs": 3,
+            "std": 0.15770248980071702
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.10233573435722981,
+            "mean": 0.09398178120874097,
+            "min": 0.08662518279246967,
+            "runs": 3,
+            "std": 0.007902619500118576
+          },
+          "delta_recall_at_budget": {
+            "max": -0.02259887005649719,
+            "mean": -0.03563838846065562,
+            "min": -0.047619047619047644,
+            "runs": 3,
+            "std": 0.01254365211938481
+          },
+          "lift_at_budget": {
+            "max": 2.1923076923076925,
+            "mean": 1.8132608132608132,
+            "min": 1.6111111111111114,
+            "runs": 3,
+            "std": 0.32850696323562445
+          },
+          "pr_auc_attention": {
+            "max": 0.6510905677734926,
+            "mean": 0.5563964110358567,
+            "min": 0.4850049292779464,
+            "runs": 3,
+            "std": 0.08545976143499559
+          },
+          "recall_at_budget": {
+            "max": 0.2261904761904762,
+            "mean": 0.18505663292632657,
+            "min": 0.1638418079096045,
+            "runs": 3,
+            "std": 0.03562884470559712
+          },
+          "rows": {
+            "max": 531.0,
+            "mean": 370.0,
+            "min": 252.0,
+            "runs": 3,
+            "std": 144.3849022578192
+          }
+        },
+        "missing_body_20pct": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "brier": {
+            "max": 0.17386716091612986,
+            "mean": 0.16150448298091813,
+            "min": 0.1483538776206987,
+            "runs": 3,
+            "std": 0.012774878799759354
+          },
+          "delta_brier": {
+            "max": 0.003362322963946479,
+            "mean": 0.0010647448800958543,
+            "min": -0.001676673525480038,
+            "runs": 3,
+            "std": 0.0025486500502236637
+          },
+          "delta_lift_at_budget": {
+            "max": 0.09154367770243299,
+            "mean": -0.006692138989503012,
+            "min": -0.11162009467094203,
+            "runs": 3,
+            "std": 0.10174707929191999
+          },
+          "delta_pr_auc_attention": {
+            "max": -0.009114669025230504,
+            "mean": -0.009969270895030117,
+            "min": -0.011269254205593437,
+            "runs": 3,
+            "std": 0.0011442608075488997
+          },
+          "delta_recall_at_budget": {
+            "max": 0.009174311926605505,
+            "mean": -0.0007083743672143631,
+            "min": -0.011299435028248594,
+            "runs": 3,
+            "std": 0.010255238869765254
+          },
+          "lift_at_budget": {
+            "max": 2.738095238095238,
+            "mean": 2.191237097550268,
+            "min": 1.730111467399603,
+            "runs": 3,
+            "std": 0.5094314163852971
+          },
+          "pr_auc_attention": {
+            "max": 0.5549414955267565,
+            "mean": 0.45244535893208565,
+            "min": 0.37139994071512317,
+            "runs": 3,
+            "std": 0.0936321289668123
+          },
+          "recall_at_budget": {
+            "max": 0.27380952380952384,
+            "mean": 0.21998664701976786,
+            "min": 0.1751412429378531,
+            "runs": 3,
+            "std": 0.049943004261935944
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        },
+        "missing_summary_20pct": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "brier": {
+            "max": 0.17193694563535813,
+            "mean": 0.1621728056910878,
+            "min": 0.15380646209465484,
+            "runs": 3,
+            "std": 0.009145708519707418
+          },
+          "delta_brier": {
+            "max": 0.0037759109484760967,
+            "mean": 0.0017330675902655173,
+            "min": -8.815860854299862e-06,
+            "runs": 3,
+            "std": 0.0019102282336341699
+          },
+          "delta_lift_at_budget": {
+            "max": 0.2746310331072994,
+            "mean": 0.07294032859060946,
+            "min": -0.055810047335471014,
+            "runs": 3,
+            "std": 0.17688427166434537
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.007201085005939245,
+            "mean": -0.0035362720513714327,
+            "min": -0.011672394392856722,
+            "runs": 3,
+            "std": 0.009701900467913764
+          },
+          "delta_recall_at_budget": {
+            "max": 0.027522935779816515,
+            "mean": 0.007291072755230739,
+            "min": -0.005649717514124297,
+            "runs": 3,
+            "std": 0.01774756428588305
+          },
+          "lift_at_budget": {
+            "max": 2.738095238095238,
+            "mean": 2.2708695651303805,
+            "min": 1.785921514735074,
+            "runs": 3,
+            "std": 0.4763341913622516
+          },
+          "pr_auc_attention": {
+            "max": 0.5527929905881662,
+            "mean": 0.4588783577757443,
+            "min": 0.3765316881535198,
+            "runs": 3,
+            "std": 0.08869822440876027
+          },
+          "recall_at_budget": {
+            "max": 0.27380952380952384,
+            "mean": 0.22798609414221296,
+            "min": 0.1807909604519774,
+            "runs": 3,
+            "std": 0.046524450144202145
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        },
+        "token_dropout_25pct": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "brier": {
+            "max": 0.16947297177937412,
+            "mean": 0.1595011604409731,
+            "min": 0.1502844024773449,
+            "runs": 3,
+            "std": 0.009616541850569852
+          },
+          "delta_brier": {
+            "max": 0.00025385133116614944,
+            "mean": -0.0009385776598491805,
+            "min": -0.002037718137904432,
+            "runs": 3,
+            "std": 0.001148629495477908
+          },
+          "delta_lift_at_budget": {
+            "max": 0.18308735540486643,
+            "mean": -0.0344634685497219,
+            "min": -0.16743014200641304,
+            "runs": 3,
+            "std": 0.1899512776594429
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.00829201528186807,
+            "mean": 0.004260638651240249,
+            "min": -0.003608474722327948,
+            "runs": 3,
+            "std": 0.006815539822059459
+          },
+          "delta_recall_at_budget": {
+            "max": 0.01834862385321101,
+            "mean": -0.003501763531307933,
+            "min": -0.01694915254237289,
+            "runs": 3,
+            "std": 0.019090338940583602
+          },
+          "lift_at_budget": {
+            "max": 2.619047619047619,
+            "mean": 2.1634657679900493,
+            "min": 1.674301420064132,
+            "runs": 3,
+            "std": 0.47326755983837626
+          },
+          "pr_auc_attention": {
+            "max": 0.560856910258695,
+            "mean": 0.466675268478356,
+            "min": 0.39076757031489723,
+            "runs": 3,
+            "std": 0.08650461636302358
+          },
+          "recall_at_budget": {
+            "max": 0.2619047619047619,
+            "mean": 0.21719325785567425,
+            "min": 0.1694915254237288,
+            "runs": 3,
+            "std": 0.046279127785223806
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        },
+        "unknown_tokens": {
+          "attention_prevalence": {
+            "max": 0.24705882352941178,
+            "mean": 0.24222188444714665,
+            "min": 0.2374727668845316,
+            "runs": 3,
+            "std": 0.004793631709278272
+          },
+          "brier": {
+            "max": 0.17050483795218338,
+            "mean": 0.16043973810082227,
+            "min": 0.15003055114617875,
+            "runs": 3,
+            "std": 0.010241479483190787
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.738095238095238,
+            "mean": 2.197929236539771,
+            "min": 1.841731562070545,
+            "runs": 3,
+            "std": 0.4756576699185117
+          },
+          "pr_auc_attention": {
+            "max": 0.5644653849810229,
+            "mean": 0.46241462982711573,
+            "min": 0.3826691949207166,
+            "runs": 3,
+            "std": 0.092927978368297
+          },
+          "recall_at_budget": {
+            "max": 0.27380952380952384,
+            "mean": 0.2206950213869822,
+            "min": 0.1864406779661017,
+            "runs": 3,
+            "std": 0.046638053177409426
+          },
+          "rows": {
+            "max": 731.0,
+            "mean": 510.0,
+            "min": 340.0,
+            "runs": 3,
+            "std": 200.42704408337713
+          }
+        }
+      }
+    },
+    "row_random": {
+      "baseline_notes": {
+        "seeded_random_score": "Uses independent seeded uniform scores; its validation threshold and ranking metrics are chance diagnostics.",
+        "train_prevalence_probability_and_majority_decision": "Uses the training prevalence as a constant probability and a fixed 0.50 decision threshold. Ranking-at-budget metrics are undefined because all scores tie, so they are intentionally omitted."
+      },
+      "baselines": {
+        "seeded_random_score": {
+          "accuracy_supplementary": {
+            "max": 0.34497816593886466,
+            "mean": 0.33319438930792644,
+            "min": 0.32272727272727275,
+            "runs": 3,
+            "std": 0.011183727350236507
+          },
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "balanced_accuracy": {
+            "max": 0.5088464260438783,
+            "mean": 0.4937674581462803,
+            "min": 0.4755917159763314,
+            "runs": 3,
+            "std": 0.01684225173750745
+          },
+          "brier": {
+            "max": 0.3382675775451637,
+            "mean": 0.3328059861120189,
+            "min": 0.32979918408484576,
+            "runs": 3,
+            "std": 0.00473792309144436
+          },
+          "budget_count": {
+            "max": 46.0,
+            "mean": 45.333333333333336,
+            "min": 44.0,
+            "runs": 3,
+            "std": 1.1547005383792517
+          },
+          "ece_10_bins": {
+            "max": 0.3201509716240097,
+            "mean": 0.3095299050279983,
+            "min": 0.2893042188925283,
+            "runs": 3,
+            "std": 0.017523329475091273
+          },
+          "f1_attention": {
+            "max": 0.44402985074626866,
+            "mean": 0.40476225591410536,
+            "min": 0.375,
+            "runs": 3,
+            "std": 0.03548300543180344
+          },
+          "lift_at_budget": {
+            "max": 1.327536231884058,
+            "mean": 0.8450750348448558,
+            "min": 0.3346729996346365,
+            "runs": 3,
+            "std": 0.49702099283276396
+          },
+          "log_loss": {
+            "max": 1.026940013656579,
+            "mean": 0.9989651226052118,
+            "min": 0.9456306085169225,
+            "runs": 3,
+            "std": 0.046207550264781294
+          },
+          "pr_auc_attention": {
+            "max": 0.2898937966038891,
+            "mean": 0.2713837262908359,
+            "min": 0.2408226030874662,
+            "runs": 3,
+            "std": 0.026663015866654347
+          },
+          "precision_at_budget": {
+            "max": 0.34782608695652173,
+            "mean": 0.22826086956521738,
+            "min": 0.08695652173913043,
+            "runs": 3,
+            "std": 0.13178647448893632
+          },
+          "precision_attention": {
+            "max": 0.29024390243902437,
+            "mean": 0.26621394508518725,
+            "min": 0.25,
+            "runs": 3,
+            "std": 0.021229942456780032
+          },
+          "recall_at_budget": {
+            "max": 0.13333333333333333,
+            "mean": 0.08474945533769063,
+            "min": 0.03361344537815126,
+            "runs": 3,
+            "std": 0.04990890748773583
+          },
+          "recall_attention": {
+            "max": 0.9444444444444444,
+            "mean": 0.844926859632742,
+            "min": 0.75,
+            "runs": 3,
+            "std": 0.09730347661866309
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5009351936103529,
+            "mean": 0.4922917374979168,
+            "min": 0.48003272105302297,
+            "runs": 3,
+            "std": 0.010910203808394895
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          },
+          "threshold": {
+            "max": 0.1983759440029791,
+            "mean": 0.137556838402877,
+            "min": 0.058394959869043195,
+            "runs": 3,
+            "std": 0.07177055084747597
+          }
+        },
+        "train_prevalence_probability_and_majority_decision": {
+          "accuracy_supplementary": {
+            "max": 0.740174672489083,
+            "mean": 0.7306007675003308,
+            "min": 0.7136363636363636,
+            "runs": 3,
+            "std": 0.014732109978173424
+          },
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "balanced_accuracy": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20626440672156576,
+            "mean": 0.1974312876209412,
+            "min": 0.19246183178840132,
+            "runs": 3,
+            "std": 0.007669660297774935
+          },
+          "ece_10_bins": {
+            "max": 0.043645189761694736,
+            "mean": 0.023373249608435547,
+            "min": 0.012070836492952958,
+            "runs": 3,
+            "std": 0.017594722434465408
+          },
+          "f1_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "log_loss": {
+            "max": 0.6038541575161697,
+            "mean": 0.5842707947385123,
+            "min": 0.5732608937973397,
+            "runs": 3,
+            "std": 0.017003385902187754
+          },
+          "pr_auc_attention": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "precision_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "recall_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          },
+          "threshold": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "model": {
+        "accuracy_supplementary": {
+          "max": 0.7379912663755459,
+          "mean": 0.70965660976578,
+          "min": 0.6704545454545454,
+          "runs": 3,
+          "std": 0.0350553502450444
+        },
+        "attention_prevalence": {
+          "max": 0.2863636363636364,
+          "mean": 0.2693992324996692,
+          "min": 0.259825327510917,
+          "runs": 3,
+          "std": 0.014732109978173412
+        },
+        "balanced_accuracy": {
+          "max": 0.6775984730175256,
+          "mean": 0.6537169153493319,
+          "min": 0.6384339298352038,
+          "runs": 3,
+          "std": 0.020950344698512553
+        },
+        "brier": {
+          "max": 0.1945355079295674,
+          "mean": 0.17943179090130937,
+          "min": 0.17099629975989664,
+          "runs": 3,
+          "std": 0.013110015548132238
+        },
+        "budget_count": {
+          "max": 46.0,
+          "mean": 45.333333333333336,
+          "min": 44.0,
+          "runs": 3,
+          "std": 1.1547005383792517
+        },
+        "ece_10_bins": {
+          "max": 0.05267313155445746,
+          "mean": 0.04715301360501264,
+          "min": 0.04232188869748239,
+          "runs": 3,
+          "std": 0.0052099031401624295
+        },
+        "f1_attention": {
+          "max": 0.5223880597014925,
+          "mean": 0.4969485964638571,
+          "min": 0.47368421052631576,
+          "runs": 3,
+          "std": 0.024424668924381124
+        },
+        "lift_at_budget": {
+          "max": 2.3231884057971017,
+          "mean": 1.997863299909336,
+          "min": 1.746031746031746,
+          "runs": 3,
+          "std": 0.2955138391314017
+        },
+        "log_loss": {
+          "max": 0.5785001714629828,
+          "mean": 0.5428196924938221,
+          "min": 0.522384431131436,
+          "runs": 3,
+          "std": 0.031008975686852867
+        },
+        "pr_auc_attention": {
+          "max": 0.4581620911825579,
+          "mean": 0.442544838724453,
+          "min": 0.418996513021174,
+          "runs": 3,
+          "std": 0.020752399145498934
+        },
+        "precision_at_budget": {
+          "max": 0.6086956521739131,
+          "mean": 0.5362318840579711,
+          "min": 0.5,
+          "runs": 3,
+          "std": 0.06275546404235065
+        },
+        "precision_attention": {
+          "max": 0.5,
+          "mean": 0.4702641488459989,
+          "min": 0.4409937888198758,
+          "runs": 3,
+          "std": 0.029505859603661002
+        },
+        "recall_at_budget": {
+          "max": 0.23333333333333334,
+          "mean": 0.20040460628695925,
+          "min": 0.1746031746031746,
+          "runs": 3,
+          "std": 0.03000677657641024
+        },
+        "recall_attention": {
+          "max": 0.5882352941176471,
+          "mean": 0.5339091192032368,
+          "min": 0.45,
+          "runs": 3,
+          "std": 0.07371303873498204
+        },
+        "roc_auc_supplementary": {
+          "max": 0.6878081854043392,
+          "mean": 0.6725411294840944,
+          "min": 0.6481018097260135,
+          "runs": 3,
+          "std": 0.021383331950616143
+        },
+        "rows": {
+          "max": 458.0,
+          "mean": 452.0,
+          "min": 440.0,
+          "runs": 3,
+          "std": 10.392304845413264
+        },
+        "threshold": {
+          "max": 0.3417148981511626,
+          "mean": 0.2778400127163267,
+          "min": 0.24302489098257812,
+          "runs": 3,
+          "std": 0.0553920732461432
+        }
+      },
+      "negative_control_train_label_permutation": null,
+      "overlap_audit": {
+        "near_text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.32208333333333333,
+            "mean": 0.30930555555555556,
+            "min": 0.3020833333333333,
+            "runs": 3,
+            "std": 0.01109721353079899
+          },
+          "affected_rows": {
+            "max": 773.0,
+            "mean": 742.3333333333334,
+            "min": 725.0,
+            "runs": 3,
+            "std": 26.63331247391757
+          },
+          "shared_groups": {
+            "max": 268.0,
+            "mean": 257.6666666666667,
+            "min": 252.0,
+            "runs": 3,
+            "std": 8.962886439832502
+          }
+        },
+        "product_group": {
+          "affected_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 72.0,
+            "mean": 72.0,
+            "min": 72.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.32208333333333333,
+            "mean": 0.30930555555555556,
+            "min": 0.3020833333333333,
+            "runs": 3,
+            "std": 0.01109721353079899
+          },
+          "affected_rows": {
+            "max": 773.0,
+            "mean": 742.3333333333334,
+            "min": 725.0,
+            "runs": 3,
+            "std": 26.63331247391757
+          },
+          "shared_groups": {
+            "max": 268.0,
+            "mean": 257.6666666666667,
+            "min": 252.0,
+            "runs": 3,
+            "std": 8.962886439832502
+          }
+        },
+        "user_group": {
+          "affected_row_share": {
+            "max": 0.9391666666666667,
+            "mean": 0.9309722222222222,
+            "min": 0.9225,
+            "runs": 3,
+            "std": 0.008336804832477203
+          },
+          "affected_rows": {
+            "max": 2254.0,
+            "mean": 2234.3333333333335,
+            "min": 2214.0,
+            "runs": 3,
+            "std": 20.008331597945226
+          },
+          "shared_groups": {
+            "max": 371.0,
+            "mean": 365.6666666666667,
+            "min": 360.0,
+            "runs": 3,
+            "std": 5.507570547286102
+          }
+        }
+      },
+      "partition_summary": {
+        "test": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "labeled_rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        },
+        "train": {
+          "attention_prevalence": {
+            "max": 0.24775449101796407,
+            "mean": 0.24602598289123367,
+            "min": 0.24271844660194175,
+            "runs": 3,
+            "std": 0.002865385365646152
+          },
+          "labeled_rows": {
+            "max": 1357.0,
+            "mean": 1344.0,
+            "min": 1336.0,
+            "runs": 3,
+            "std": 11.357816691600547
+          }
+        },
+        "validation": {
+          "attention_prevalence": {
+            "max": 0.26146788990825687,
+            "mean": 0.25742105916291136,
+            "min": 0.25055432372505543,
+            "runs": 3,
+            "std": 0.005978325732586919
+          },
+          "labeled_rows": {
+            "max": 451.0,
+            "mean": 434.0,
+            "min": 415.0,
+            "runs": 3,
+            "std": 18.083141320025124
+          }
+        }
+      },
+      "stress": {
+        "body_truncated_8_tokens": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "brier": {
+            "max": 0.1951655876950482,
+            "mean": 0.17945473363803824,
+            "min": 0.17153993978653953,
+            "runs": 3,
+            "std": 0.013606128245028833
+          },
+          "delta_brier": {
+            "max": 0.0006300797654807955,
+            "mean": 2.2942736728898128e-05,
+            "min": -0.0011048915819369953,
+            "runs": 3,
+            "std": 0.0009776889305310823
+          },
+          "delta_lift_at_budget": {
+            "max": 0.16733649981731813,
+            "mean": -0.027192181220314415,
+            "min": -0.24891304347826138,
+            "runs": 3,
+            "std": 0.2094528147652436
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.011202920556636853,
+            "mean": 0.002089373806780944,
+            "min": -0.010171494619075239,
+            "runs": 3,
+            "std": 0.011029307835267529
+          },
+          "delta_recall_at_budget": {
+            "max": 0.016806722689075626,
+            "mean": -0.0027310924369747893,
+            "min": -0.024999999999999994,
+            "runs": 3,
+            "std": 0.02103674558777553
+          },
+          "lift_at_budget": {
+            "max": 2.091706247716478,
+            "mean": 1.9706711186890213,
+            "min": 1.746031746031746,
+            "runs": 3,
+            "std": 0.1947385291931904
+          },
+          "pr_auc_attention": {
+            "max": 0.46936501173919476,
+            "mean": 0.444634212531234,
+            "min": 0.4088250184020988,
+            "runs": 3,
+            "std": 0.03175406783131939
+          },
+          "recall_at_budget": {
+            "max": 0.21008403361344538,
+            "mean": 0.19767351384998444,
+            "min": 0.1746031746031746,
+            "runs": 3,
+            "std": 0.019998666270275803
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        },
+        "case_and_punctuation": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "brier": {
+            "max": 0.1945355079295674,
+            "mean": 0.17943179090130937,
+            "min": 0.17099629975989664,
+            "runs": 3,
+            "std": 0.013110015548132238
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.3231884057971017,
+            "mean": 1.997863299909336,
+            "min": 1.746031746031746,
+            "runs": 3,
+            "std": 0.2955138391314017
+          },
+          "pr_auc_attention": {
+            "max": 0.4581620911825579,
+            "mean": 0.442544838724453,
+            "min": 0.418996513021174,
+            "runs": 3,
+            "std": 0.020752399145498934
+          },
+          "recall_at_budget": {
+            "max": 0.23333333333333334,
+            "mean": 0.20040460628695925,
+            "min": 0.1746031746031746,
+            "runs": 3,
+            "std": 0.03000677657641024
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        },
+        "higher_attention_prior": {
+          "attention_prevalence": {
+            "max": 0.3333333333333333,
+            "mean": 0.3333333333333333,
+            "min": 0.3333333333333333,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.21649844706961427,
+            "mean": 0.2062486794242642,
+            "min": 0.20019575337733933,
+            "runs": 3,
+            "std": 0.008924940613681378
+          },
+          "delta_brier": {
+            "max": 0.02928827281137497,
+            "mean": 0.026816888522954847,
+            "min": 0.021962939140046878,
+            "runs": 3,
+            "std": 0.004203878051416001
+          },
+          "delta_lift_at_budget": {
+            "max": -0.15652173913043477,
+            "mean": -0.1923077443537801,
+            "min": -0.24603174603174605,
+            "runs": 3,
+            "std": 0.04737445642403387
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.08794868625521213,
+            "mean": 0.07133846493570722,
+            "min": 0.04058346488268988,
+            "runs": 3,
+            "std": 0.026663122903779087
+          },
+          "delta_recall_at_budget": {
+            "max": -0.016666666666666663,
+            "mean": -0.019094304388422034,
+            "min": -0.023809523809523808,
+            "runs": 3,
+            "std": 0.0040841002147602576
+          },
+          "lift_at_budget": {
+            "max": 2.166666666666667,
+            "mean": 1.8055555555555556,
+            "min": 1.5,
+            "runs": 3,
+            "std": 0.3367876570272818
+          },
+          "pr_auc_attention": {
+            "max": 0.54611077743777,
+            "mean": 0.5138833036601602,
+            "min": 0.4595799779038639,
+            "runs": 3,
+            "std": 0.047301186533034466
+          },
+          "recall_at_budget": {
+            "max": 0.21666666666666667,
+            "mean": 0.18131030189853722,
+            "min": 0.15079365079365079,
+            "runs": 3,
+            "std": 0.03320211855150642
+          },
+          "rows": {
+            "max": 378.0,
+            "mean": 365.0,
+            "min": 357.0,
+            "runs": 3,
+            "std": 11.357816691600547
+          }
+        },
+        "missing_body_20pct": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "brier": {
+            "max": 0.19887806252795456,
+            "mean": 0.18166192256659355,
+            "min": 0.17195654956674655,
+            "runs": 3,
+            "std": 0.014949939140101879
+          },
+          "delta_brier": {
+            "max": 0.004342554598387172,
+            "mean": 0.002230131665284213,
+            "min": -0.0008070154477174962,
+            "runs": 3,
+            "std": 0.002696452117431658
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": -0.08056705774097088,
+            "min": -0.15873015873015883,
+            "runs": 3,
+            "std": 0.07939238048247253
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0011205825958280347,
+            "mean": -0.013087666974234746,
+            "min": -0.024502299815291784,
+            "runs": 3,
+            "std": 0.013037877380346615
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": -0.008068783068783067,
+            "min": -0.015873015873015872,
+            "runs": 3,
+            "std": 0.00793981412616874
+          },
+          "lift_at_budget": {
+            "max": 2.240217391304348,
+            "mean": 1.917296242168365,
+            "min": 1.5873015873015872,
+            "runs": 3,
+            "std": 0.32651537121801105
+          },
+          "pr_auc_attention": {
+            "max": 0.45928267377838594,
+            "mean": 0.42945717175021825,
+            "min": 0.40311522931793353,
+            "runs": 3,
+            "std": 0.028245297748440406
+          },
+          "recall_at_budget": {
+            "max": 0.225,
+            "mean": 0.19233582321817613,
+            "min": 0.15873015873015872,
+            "runs": 3,
+            "std": 0.03314495081921491
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        },
+        "missing_summary_20pct": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "brier": {
+            "max": 0.1969925512726224,
+            "mean": 0.18216901374493574,
+            "min": 0.17407800895803968,
+            "runs": 3,
+            "std": 0.012855516722445042
+          },
+          "delta_brier": {
+            "max": 0.0030817091981430456,
+            "mean": 0.0027372228436263655,
+            "min": 0.002457043343055021,
+            "runs": 3,
+            "std": 0.0003172591783171502
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": -0.11132525473957704,
+            "min": -0.2510047497259773,
+            "runs": 3,
+            "std": 0.12788204839316208
+          },
+          "delta_pr_auc_attention": {
+            "max": -0.003799369725853985,
+            "mean": -0.007237958178223332,
+            "min": -0.011496505832911341,
+            "runs": 3,
+            "std": 0.003913531127095045
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": -0.01118113912231559,
+            "min": -0.02521008403361344,
+            "runs": 3,
+            "std": 0.012844048528570868
+          },
+          "lift_at_budget": {
+            "max": 2.240217391304348,
+            "mean": 1.8865380451697586,
+            "min": 1.6733649981731824,
+            "runs": 3,
+            "std": 0.3084427401848322
+          },
+          "pr_auc_attention": {
+            "max": 0.4543627214567039,
+            "mean": 0.4353068805462297,
+            "min": 0.41257851404526935,
+            "runs": 3,
+            "std": 0.02113280815249188
+          },
+          "recall_at_budget": {
+            "max": 0.225,
+            "mean": 0.18922346716464364,
+            "min": 0.16806722689075632,
+            "runs": 3,
+            "std": 0.031155254443101018
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        },
+        "token_dropout_25pct": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "brier": {
+            "max": 0.19548531399348776,
+            "mean": 0.1793679478048967,
+            "min": 0.17097097156594315,
+            "runs": 3,
+            "std": 0.01396214746715475
+          },
+          "delta_brier": {
+            "max": 0.0009498060639203665,
+            "mean": -6.384309641263575e-05,
+            "min": -0.001792593448520896,
+            "runs": 3,
+            "std": 0.0015045650724771974
+          },
+          "delta_lift_at_budget": {
+            "max": 0.16733649981731813,
+            "mean": -0.0247882244685315,
+            "min": -0.15873015873015883,
+            "runs": 3,
+            "std": 0.1706422991093688
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.014849730434677577,
+            "mean": -0.0017620568755529198,
+            "min": -0.015556046282205471,
+            "runs": 3,
+            "std": 0.015397493406665028
+          },
+          "delta_recall_at_budget": {
+            "max": 0.016806722689075626,
+            "mean": -0.002466542172424526,
+            "min": -0.015873015873015872,
+            "runs": 3,
+            "std": 0.017111567929793892
+          },
+          "lift_at_budget": {
+            "max": 2.240217391304348,
+            "mean": 1.9730750754408042,
+            "min": 1.5873015873015872,
+            "runs": 3,
+            "std": 0.3422422797606518
+          },
+          "pr_auc_attention": {
+            "max": 0.4730118216172355,
+            "mean": 0.4407827818489001,
+            "min": 0.41441665824204316,
+            "runs": 3,
+            "std": 0.029734300600127862
+          },
+          "recall_at_budget": {
+            "max": 0.225,
+            "mean": 0.1979380641145347,
+            "min": 0.15873015873015872,
+            "runs": 3,
+            "std": 0.034764441557198086
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        },
+        "unknown_tokens": {
+          "attention_prevalence": {
+            "max": 0.2863636363636364,
+            "mean": 0.2693992324996692,
+            "min": 0.259825327510917,
+            "runs": 3,
+            "std": 0.014732109978173412
+          },
+          "brier": {
+            "max": 0.1945355079295674,
+            "mean": 0.17943179090130937,
+            "min": 0.17099629975989664,
+            "runs": 3,
+            "std": 0.013110015548132238
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.3231884057971017,
+            "mean": 1.997863299909336,
+            "min": 1.746031746031746,
+            "runs": 3,
+            "std": 0.2955138391314017
+          },
+          "pr_auc_attention": {
+            "max": 0.4581620911825579,
+            "mean": 0.442544838724453,
+            "min": 0.418996513021174,
+            "runs": 3,
+            "std": 0.020752399145498934
+          },
+          "recall_at_budget": {
+            "max": 0.23333333333333334,
+            "mean": 0.20040460628695925,
+            "min": 0.1746031746031746,
+            "runs": 3,
+            "std": 0.03000677657641024
+          },
+          "rows": {
+            "max": 458.0,
+            "mean": 452.0,
+            "min": 440.0,
+            "runs": 3,
+            "std": 10.392304845413264
+          }
+        }
+      }
+    },
+    "user_group": {
+      "baseline_notes": {
+        "seeded_random_score": "Uses independent seeded uniform scores; its validation threshold and ranking metrics are chance diagnostics.",
+        "train_prevalence_probability_and_majority_decision": "Uses the training prevalence as a constant probability and a fixed 0.50 decision threshold. Ranking-at-budget metrics are undefined because all scores tie, so they are intentionally omitted."
+      },
+      "baselines": {
+        "seeded_random_score": {
+          "accuracy_supplementary": {
+            "max": 0.3204903677758319,
+            "mean": 0.28558158732805944,
+            "min": 0.26024590163934425,
+            "runs": 3,
+            "std": 0.031242311573681927
+          },
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "balanced_accuracy": {
+            "max": 0.5027842744180866,
+            "mean": 0.49825720205596286,
+            "min": 0.4919873317498021,
+            "runs": 3,
+            "std": 0.005605488493508898
+          },
+          "brier": {
+            "max": 0.33695880224281405,
+            "mean": 0.32162874749330345,
+            "min": 0.29194760177007817,
+            "runs": 3,
+            "std": 0.025709286281440813
+          },
+          "budget_count": {
+            "max": 58.0,
+            "mean": 51.666666666666664,
+            "min": 48.0,
+            "runs": 3,
+            "std": 5.507570547286102
+          },
+          "ece_10_bins": {
+            "max": 0.31375733750394214,
+            "mean": 0.2964516254533498,
+            "min": 0.26725409447540555,
+            "runs": 3,
+            "std": 0.025430285509476257
+          },
+          "f1_attention": {
+            "max": 0.43261231281198004,
+            "mean": 0.41114454196208583,
+            "min": 0.39751552795031053,
+            "runs": 3,
+            "std": 0.018815702444552673
+          },
+          "lift_at_budget": {
+            "max": 1.3764725402356066,
+            "mean": 1.0353048019470885,
+            "min": 0.6793269230769231,
+            "runs": 3,
+            "std": 0.3488086983991749
+          },
+          "log_loss": {
+            "max": 1.0058206522160553,
+            "mean": 0.9652293843792289,
+            "min": 0.8915577916219348,
+            "runs": 3,
+            "std": 0.06391190225944336
+          },
+          "pr_auc_attention": {
+            "max": 0.3196319556690396,
+            "mean": 0.28760544261861565,
+            "min": 0.2662385406664953,
+            "runs": 3,
+            "std": 0.02824773748433297
+          },
+          "precision_at_budget": {
+            "max": 0.3469387755102041,
+            "mean": 0.27010028149190707,
+            "min": 0.1875,
+            "runs": 3,
+            "std": 0.0798753994056781
+          },
+          "precision_attention": {
+            "max": 0.2760084925690021,
+            "mean": 0.2627432791683045,
+            "min": 0.25311203319502074,
+            "runs": 3,
+            "std": 0.01187292097226809
+          },
+          "recall_at_budget": {
+            "max": 0.13821138211382114,
+            "mean": 0.10470293933708569,
+            "min": 0.06923076923076923,
+            "runs": 3,
+            "std": 0.03453220825836474
+          },
+          "recall_attention": {
+            "max": 1.0,
+            "mean": 0.9484010840108401,
+            "min": 0.8533333333333334,
+            "runs": 3,
+            "std": 0.0824313803696741
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5851431117050897,
+            "mean": 0.5270109558312347,
+            "min": 0.49194676291450484,
+            "runs": 3,
+            "std": 0.05069998070233917
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          },
+          "threshold": {
+            "max": 0.14349210744156382,
+            "mean": 0.049380684476706516,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.08153603773042215
+          }
+        },
+        "train_prevalence_probability_and_majority_decision": {
+          "accuracy_supplementary": {
+            "max": 0.7479508196721312,
+            "mean": 0.7364151014453512,
+            "min": 0.7239915074309978,
+            "runs": 3,
+            "std": 0.012004307698807538
+          },
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "balanced_accuracy": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20063912804851783,
+            "mean": 0.19438648346407517,
+            "min": 0.1885219356785663,
+            "runs": 3,
+            "std": 0.006067911673435098
+          },
+          "ece_10_bins": {
+            "max": 0.02848374009375454,
+            "mean": 0.015788105228008387,
+            "min": 0.0012428413607447064,
+            "runs": 3,
+            "std": 0.013714316845106257
+          },
+          "f1_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "log_loss": {
+            "max": 0.5912692933370025,
+            "mean": 0.577511780202791,
+            "min": 0.5645793097949798,
+            "runs": 3,
+            "std": 0.013364105918229237
+          },
+          "pr_auc_attention": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "precision_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "recall_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "roc_auc_supplementary": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          },
+          "threshold": {
+            "max": 0.5,
+            "mean": 0.5,
+            "min": 0.5,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "model": {
+        "accuracy_supplementary": {
+          "max": 0.735655737704918,
+          "mean": 0.715263434178374,
+          "min": 0.6882661996497373,
+          "runs": 3,
+          "std": 0.024375416189834787
+        },
+        "attention_prevalence": {
+          "max": 0.2760084925690021,
+          "mean": 0.2635848985546487,
+          "min": 0.2520491803278688,
+          "runs": 3,
+          "std": 0.01200430769880751
+        },
+        "balanced_accuracy": {
+          "max": 0.6723577235772358,
+          "mean": 0.6603832141531898,
+          "min": 0.6532258064516129,
+          "runs": 3,
+          "std": 0.010436039238086817
+        },
+        "brier": {
+          "max": 0.17924960406472307,
+          "mean": 0.17568486634707325,
+          "min": 0.17284412726776266,
+          "runs": 3,
+          "std": 0.0032635354709788806
+        },
+        "budget_count": {
+          "max": 58.0,
+          "mean": 51.666666666666664,
+          "min": 48.0,
+          "runs": 3,
+          "std": 5.507570547286102
+        },
+        "ece_10_bins": {
+          "max": 0.049655201445030536,
+          "mean": 0.04029902488571738,
+          "min": 0.02675799077169847,
+          "runs": 3,
+          "std": 0.01200855273209979
+        },
+        "f1_attention": {
+          "max": 0.5095057034220533,
+          "mean": 0.5015883786175769,
+          "min": 0.4971751412429379,
+          "runs": 3,
+          "std": 0.0068716564560676405
+        },
+        "lift_at_budget": {
+          "max": 2.264423076923077,
+          "mean": 1.9392698158170345,
+          "min": 1.7720689655172415,
+          "runs": 3,
+          "std": 0.28162895059667986
+        },
+        "log_loss": {
+          "max": 0.5401973978763654,
+          "mean": 0.5306398766075291,
+          "min": 0.523544938514712,
+          "runs": 3,
+          "std": 0.008595018186251262
+        },
+        "pr_auc_attention": {
+          "max": 0.4981103753680028,
+          "mean": 0.4520093076150497,
+          "min": 0.4195774198399557,
+          "runs": 3,
+          "std": 0.04101208525475
+        },
+        "precision_at_budget": {
+          "max": 0.625,
+          "mean": 0.513165611072015,
+          "min": 0.4489795918367347,
+          "runs": 3,
+          "std": 0.09720376213537274
+        },
+        "precision_attention": {
+          "max": 0.4961832061068702,
+          "mean": 0.4687090612326356,
+          "min": 0.43137254901960786,
+          "runs": 3,
+          "std": 0.03351201329619941
+        },
+        "recall_at_budget": {
+          "max": 0.23076923076923078,
+          "mean": 0.196543673129039,
+          "min": 0.17886178861788618,
+          "runs": 3,
+          "std": 0.029645665418812268
+        },
+        "recall_attention": {
+          "max": 0.5866666666666667,
+          "mean": 0.5437940379403794,
+          "min": 0.5,
+          "runs": 3,
+          "std": 0.04334067978219352
+        },
+        "roc_auc_supplementary": {
+          "max": 0.6980126682501979,
+          "mean": 0.6913230852928812,
+          "min": 0.6837955228867356,
+          "runs": 3,
+          "std": 0.0071455204666244455
+        },
+        "rows": {
+          "max": 571.0,
+          "mean": 510.0,
+          "min": 471.0,
+          "runs": 3,
+          "std": 53.50700888668698
+        },
+        "threshold": {
+          "max": 0.30313757836842453,
+          "mean": 0.26954326650811056,
+          "min": 0.23806535919716754,
+          "runs": 3,
+          "std": 0.032587694044385454
+        }
+      },
+      "negative_control_train_label_permutation": null,
+      "overlap_audit": {
+        "near_text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.3329166666666667,
+            "mean": 0.31902777777777774,
+            "min": 0.2995833333333333,
+            "runs": 3,
+            "std": 0.017347216662217797
+          },
+          "affected_rows": {
+            "max": 799.0,
+            "mean": 765.6666666666666,
+            "min": 719.0,
+            "runs": 3,
+            "std": 41.63331998932265
+          },
+          "shared_groups": {
+            "max": 278.0,
+            "mean": 266.6666666666667,
+            "min": 252.0,
+            "runs": 3,
+            "std": 13.316656236958785
+          }
+        },
+        "product_group": {
+          "affected_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 72.0,
+            "mean": 72.0,
+            "min": 72.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "text_fingerprint": {
+          "affected_row_share": {
+            "max": 0.3329166666666667,
+            "mean": 0.31902777777777774,
+            "min": 0.2995833333333333,
+            "runs": 3,
+            "std": 0.017347216662217797
+          },
+          "affected_rows": {
+            "max": 799.0,
+            "mean": 765.6666666666666,
+            "min": 719.0,
+            "runs": 3,
+            "std": 41.63331998932265
+          },
+          "shared_groups": {
+            "max": 278.0,
+            "mean": 266.6666666666667,
+            "min": 252.0,
+            "runs": 3,
+            "std": 13.316656236958785
+          }
+        },
+        "user_group": {
+          "affected_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "affected_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "shared_groups": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "partition_summary": {
+        "test": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "labeled_rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        },
+        "train": {
+          "attention_prevalence": {
+            "max": 0.2532920216886135,
+            "mean": 0.24862535423380347,
+            "min": 0.2450592885375494,
+            "runs": 3,
+            "std": 0.0042252771456272155
+          },
+          "labeled_rows": {
+            "max": 1414.0,
+            "mean": 1323.3333333333333,
+            "min": 1265.0,
+            "runs": 3,
+            "std": 79.5885251360605
+          }
+        },
+        "validation": {
+          "attention_prevalence": {
+            "max": 0.2639593908629442,
+            "mean": 0.25340309011926215,
+            "min": 0.24347826086956523,
+            "runs": 3,
+            "std": 0.010255156685161299
+          },
+          "labeled_rows": {
+            "max": 451.0,
+            "mean": 396.6666666666667,
+            "min": 345.0,
+            "runs": 3,
+            "std": 53.05029060555025
+          }
+        }
+      },
+      "stress": {
+        "body_truncated_8_tokens": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "brier": {
+            "max": 0.17880489714484427,
+            "mean": 0.17494067695128265,
+            "min": 0.17275351104565154,
+            "runs": 3,
+            "std": 0.0033562183695157936
+          },
+          "delta_brier": {
+            "max": -9.061622211112286e-05,
+            "mean": -0.0007441893957905824,
+            "min": -0.0016972450453818233,
+            "runs": 3,
+            "std": 0.0008441453423284031
+          },
+          "delta_lift_at_budget": {
+            "max": 0.16193794591007138,
+            "mean": -0.002906921065637983,
+            "min": -0.3019230769230772,
+            "runs": 3,
+            "std": 0.25940935448840724
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.004121445364603404,
+            "mean": -0.004601646106055217,
+            "min": -0.01951806850369875,
+            "runs": 3,
+            "std": 0.01297977907981385
+          },
+          "delta_recall_at_budget": {
+            "max": 0.01626016260162602,
+            "mean": -0.00039191161142380454,
+            "min": -0.03076923076923077,
+            "runs": 3,
+            "std": 0.0263482014908586
+          },
+          "lift_at_budget": {
+            "max": 1.9625,
+            "mean": 1.9363628947513964,
+            "min": 1.9033333333333333,
+            "runs": 3,
+            "std": 0.030179514163535707
+          },
+          "pr_auc_attention": {
+            "max": 0.47859230686430404,
+            "mean": 0.4474076615089945,
+            "min": 0.4236988652045591,
+            "runs": 3,
+            "std": 0.028199977368546715
+          },
+          "recall_at_budget": {
+            "max": 0.2,
+            "mean": 0.19615176151761518,
+            "min": 0.19333333333333333,
+            "runs": 3,
+            "std": 0.003450578654178219
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        },
+        "case_and_punctuation": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "brier": {
+            "max": 0.17924960406472307,
+            "mean": 0.17568486634707325,
+            "min": 0.17284412726776266,
+            "runs": 3,
+            "std": 0.0032635354709788806
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.264423076923077,
+            "mean": 1.9392698158170345,
+            "min": 1.7720689655172415,
+            "runs": 3,
+            "std": 0.28162895059667986
+          },
+          "pr_auc_attention": {
+            "max": 0.4981103753680028,
+            "mean": 0.4520093076150497,
+            "min": 0.4195774198399557,
+            "runs": 3,
+            "std": 0.04101208525475
+          },
+          "recall_at_budget": {
+            "max": 0.23076923076923078,
+            "mean": 0.196543673129039,
+            "min": 0.17886178861788618,
+            "runs": 3,
+            "std": 0.029645665418812268
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        },
+        "higher_attention_prior": {
+          "attention_prevalence": {
+            "max": 0.3333333333333333,
+            "mean": 0.3333333333333333,
+            "min": 0.3333333333333333,
+            "runs": 3,
+            "std": 0.0
+          },
+          "brier": {
+            "max": 0.20544672711519374,
+            "mean": 0.20437017789376985,
+            "min": 0.20307355119680365,
+            "runs": 3,
+            "std": 0.0012017972193084235
+          },
+          "delta_brier": {
+            "max": 0.03048585940645973,
+            "mean": 0.028685311546696585,
+            "min": 0.02534065130458904,
+            "runs": 3,
+            "std": 0.0028993971597335412
+          },
+          "delta_lift_at_budget": {
+            "max": 0.002466378772999045,
+            "mean": -0.10023077677799545,
+            "min": -0.2644230769230771,
+            "runs": 3,
+            "std": 0.14367927824471666
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.11233751242387519,
+            "mean": 0.08239091663371162,
+            "min": 0.06131577782115799,
+            "runs": 3,
+            "std": 0.02664266150643954
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": -0.012478632478632476,
+            "min": -0.03076923076923077,
+            "runs": 3,
+            "std": 0.016187050394748853
+          },
+          "lift_at_budget": {
+            "max": 2.0,
+            "mean": 1.8390390390390392,
+            "min": 1.7333333333333332,
+            "runs": 3,
+            "std": 0.14166028096389738
+          },
+          "pr_auc_attention": {
+            "max": 0.5594261531891608,
+            "mean": 0.5344002242487613,
+            "min": 0.5118595872932923,
+            "runs": 3,
+            "std": 0.023880474345566702
+          },
+          "recall_at_budget": {
+            "max": 0.2,
+            "mean": 0.18406504065040652,
+            "min": 0.17333333333333334,
+            "runs": 3,
+            "std": 0.014074201631468233
+          },
+          "rows": {
+            "max": 450.0,
+            "mean": 403.0,
+            "min": 369.0,
+            "runs": 3,
+            "std": 42.035699113967404
+          }
+        },
+        "missing_body_20pct": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "brier": {
+            "max": 0.18152426832014348,
+            "mean": 0.17700029446062512,
+            "min": 0.17248598852335645,
+            "runs": 3,
+            "std": 0.004519147654457933
+          },
+          "delta_brier": {
+            "max": 0.004146499270612836,
+            "mean": 0.0013154281135518975,
+            "min": -0.00247487918537756,
+            "runs": 3,
+            "std": 0.0034133214976417824
+          },
+          "delta_lift_at_budget": {
+            "max": 0.06563218390804604,
+            "mean": -0.057262177077598286,
+            "min": -0.16193794591007138,
+            "runs": 3,
+            "std": 0.11487375166412647
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.02074892075616047,
+            "mean": -0.0101478986034406,
+            "min": -0.03381443229648112,
+            "runs": 3,
+            "std": 0.02799102797686888
+          },
+          "delta_recall_at_budget": {
+            "max": 0.006666666666666682,
+            "mean": -0.005761934542422344,
+            "min": -0.01626016260162602,
+            "runs": 3,
+            "std": 0.011584672220123857
+          },
+          "lift_at_budget": {
+            "max": 2.1889423076923076,
+            "mean": 1.8820076387394362,
+            "min": 1.6193794591007136,
+            "runs": 3,
+            "std": 0.2873547604798837
+          },
+          "pr_auc_attention": {
+            "max": 0.46429594307152167,
+            "mean": 0.44186140901160914,
+            "min": 0.40219923556995457,
+            "runs": 3,
+            "std": 0.034446972866048836
+          },
+          "recall_at_budget": {
+            "max": 0.2230769230769231,
+            "mean": 0.19078173858661662,
+            "min": 0.16260162601626016,
+            "runs": 3,
+            "std": 0.030446933364850177
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        },
+        "missing_summary_20pct": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "brier": {
+            "max": 0.18179483290002857,
+            "mean": 0.1783713055126516,
+            "min": 0.17660561641885056,
+            "runs": 3,
+            "std": 0.0029653520495663667
+          },
+          "delta_brier": {
+            "max": 0.003761489151087899,
+            "mean": 0.0026864391655783506,
+            "min": 0.0017525995103416514,
+            "runs": 3,
+            "std": 0.0010118619793263418
+          },
+          "delta_lift_at_budget": {
+            "max": 0.13126436781609185,
+            "mean": -0.010224526031326509,
+            "min": -0.16193794591007138,
+            "runs": 3,
+            "std": 0.14686832501604224
+          },
+          "delta_pr_auc_attention": {
+            "max": -0.005241861980805729,
+            "mean": -0.018398601278211652,
+            "min": -0.02631305286565555,
+            "runs": 3,
+            "std": 0.011472138277233182
+          },
+          "delta_recall_at_budget": {
+            "max": 0.013333333333333336,
+            "mean": -0.0009756097560975618,
+            "min": -0.01626016260162602,
+            "runs": 3,
+            "std": 0.014820850556235245
+          },
+          "lift_at_budget": {
+            "max": 2.264423076923077,
+            "mean": 1.929045289785708,
+            "min": 1.6193794591007136,
+            "runs": 3,
+            "std": 0.32328956950665366
+          },
+          "pr_auc_attention": {
+            "max": 0.4744694863798291,
+            "mean": 0.433610706336838,
+            "min": 0.3932643669743002,
+            "runs": 3,
+            "std": 0.040604984928020726
+          },
+          "recall_at_budget": {
+            "max": 0.23076923076923078,
+            "mean": 0.19556806337294141,
+            "min": 0.16260162601626016,
+            "runs": 3,
+            "std": 0.034138703815489994
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        },
+        "token_dropout_25pct": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "brier": {
+            "max": 0.17903605001295855,
+            "mean": 0.1747577531970733,
+            "min": 0.1715449412637644,
+            "runs": 3,
+            "std": 0.0038575408098051765
+          },
+          "delta_brier": {
+            "max": -0.00021355405176451403,
+            "mean": -0.0009271131499999549,
+            "min": -0.001299186003998254,
+            "runs": 3,
+            "std": 0.000618149516848555
+          },
+          "delta_lift_at_budget": {
+            "max": 0.13126436781609185,
+            "mean": 0.045584190513452714,
+            "min": -0.07548076923076952,
+            "runs": 3,
+            "std": 0.10781906160072066
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.01010792496575702,
+            "mean": 0.003889371046219725,
+            "min": -0.006768262562360572,
+            "runs": 3,
+            "std": 0.009272566944234133
+          },
+          "delta_recall_at_budget": {
+            "max": 0.013333333333333336,
+            "mean": 0.00459036898061288,
+            "min": -0.007692307692307693,
+            "runs": 3,
+            "std": 0.010950642338105658
+          },
+          "lift_at_budget": {
+            "max": 2.1889423076923076,
+            "mean": 1.9848540063304874,
+            "min": 1.8622863779658207,
+            "runs": 3,
+            "std": 0.1779332436640229
+          },
+          "pr_auc_attention": {
+            "max": 0.4913421128056422,
+            "mean": 0.4558986786612695,
+            "min": 0.42790587057521845,
+            "runs": 3,
+            "std": 0.032367778400362264
+          },
+          "recall_at_budget": {
+            "max": 0.2230769230769231,
+            "mean": 0.20113404210965188,
+            "min": 0.18699186991869918,
+            "runs": 3,
+            "std": 0.01926580022780422
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        },
+        "unknown_tokens": {
+          "attention_prevalence": {
+            "max": 0.2760084925690021,
+            "mean": 0.2635848985546487,
+            "min": 0.2520491803278688,
+            "runs": 3,
+            "std": 0.01200430769880751
+          },
+          "brier": {
+            "max": 0.17924960406472307,
+            "mean": 0.17568486634707325,
+            "min": 0.17284412726776266,
+            "runs": 3,
+            "std": 0.0032635354709788806
+          },
+          "delta_brier": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_lift_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_pr_auc_attention": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "delta_recall_at_budget": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "lift_at_budget": {
+            "max": 2.264423076923077,
+            "mean": 1.9392698158170345,
+            "min": 1.7720689655172415,
+            "runs": 3,
+            "std": 0.28162895059667986
+          },
+          "pr_auc_attention": {
+            "max": 0.4981103753680028,
+            "mean": 0.4520093076150497,
+            "min": 0.4195774198399557,
+            "runs": 3,
+            "std": 0.04101208525475
+          },
+          "recall_at_budget": {
+            "max": 0.23076923076923078,
+            "mean": 0.196543673129039,
+            "min": 0.17886178861788618,
+            "runs": 3,
+            "std": 0.029645665418812268
+          },
+          "rows": {
+            "max": 571.0,
+            "mean": 510.0,
+            "min": 471.0,
+            "runs": 3,
+            "std": 53.50700888668698
+          }
+        }
+      }
+    }
+  },
+  "runtime_controls": {
+    "negative_control_mode": "each_fingerprint_group_run_fail_closed",
+    "neutral_exclusion_stage": "inside_train_validation_test_after_manifest",
+    "public_safety_validation": "performed_by_CLI_before_write",
+    "split_input_columns": [
+      "review_id",
+      "user_group",
+      "product_group",
+      "event_time",
+      "text_fingerprint",
+      "near_text_fingerprint"
+    ],
+    "target_bearing_split_columns": []
+  },
+  "runtime_versions": {
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "python": "3.13.9",
+    "scikit_learn": "1.7.2"
+  },
+  "sensitivity_design": {
+    "forward_time": "one fixed chronological cutoff using the first seed; no repeated-cutoff uncertainty claim",
+    "hash_protocols": "all listed seeds vary split assignment and model seed",
+    "summary": "mean/std/min/max are descriptive sensitivity ranges, not confidence intervals"
+  },
+  "source_rows_included": false,
+  "source_trained_artifacts_included": false,
+  "synthetic_data": true,
+  "synthetic_fixture": {
+    "attention_rate_early": 0.18,
+    "attention_rate_late": 0.24,
+    "duplicate_rate": 0.18,
+    "late_period_fraction": 0.3,
+    "missing_text_rate": 0.025,
+    "n_rows": 2400,
+    "neutral_rating_rate": 0.08,
+    "rating_noise": 0.1,
+    "seed": 20260828,
+    "text_noise": 0.22
+  }
+}

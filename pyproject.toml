@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "review-sentiment-reliability"
+version = "0.1.0"
+description = "Leakage-aware reliability evaluation for rating-proxy review text classification."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Zishen Tian" }]
+dependencies = [
+  "joblib>=1.4,<2",
+  "numpy>=2.2,<3",
+  "pandas>=2.2,<4",
+  "scikit-learn>=1.6,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<10",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+review-reliability = "review_reliability.cli:main"
+
+[project.urls]
+Repository = "https://github.com/Sean-Titian/review-sentiment-reliability"
+Issues = "https://github.com/Sean-Titian/review-sentiment-reliability/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
