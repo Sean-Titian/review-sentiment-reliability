@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from dataclasses import dataclass
 from typing import Literal
 
@@ -25,6 +26,13 @@ PROTOCOLS: tuple[Protocol, ...] = (
     "product_group",
     "forward_time",
 )
+PROTOCOL_ISOLATION_COLUMNS: dict[Protocol, tuple[str, ...]] = {
+    "row_random": (),
+    "fingerprint_group": ("text_fingerprint", "near_text_fingerprint"),
+    "user_group": ("user_group",),
+    "product_group": ("product_group",),
+    "forward_time": (),
+}
 
 
 @dataclass(frozen=True)
@@ -69,35 +77,57 @@ def _validate_split_keys(split_keys: pd.DataFrame) -> None:
     )
     if forbidden:
         raise ValueError(f"Target-bearing fields are forbidden in split input: {sorted(forbidden)}")
-    if split_keys["review_id"].duplicated().any():
-        raise ValueError("review_id must be unique in split keys")
+    extras = sorted(set(split_keys.columns) - set(SPLIT_KEY_COLUMNS))
+    if extras:
+        raise ValueError(f"Unexpected fields are forbidden in split input: {extras}")
+    if split_keys["review_id"].isna().any() or split_keys["review_id"].duplicated().any():
+        raise ValueError("review_id must be present and unique in split keys")
+    timestamps = pd.to_datetime(split_keys["event_time"], errors="coerce", utc=True)
+    if timestamps.isna().any():
+        raise ValueError("event_time must be parseable in split keys")
+
+
+def _whole_timestamp_boundaries(
+    keys: pd.DataFrame,
+    spec: SplitSpec,
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    ordered = keys.sort_values(["event_time", "review_id"], kind="mergesort")
+    unique_times = pd.Index(ordered["event_time"].drop_duplicates())
+    if len(unique_times) < 3:
+        raise ValueError("Forward-time split requires at least three unique timestamps")
+
+    validation_candidate = ordered["event_time"].iloc[int(len(ordered) * spec.train_share)]
+    test_candidate = ordered["event_time"].iloc[
+        int(len(ordered) * (spec.train_share + spec.validation_share))
+    ]
+    validation_index = int(unique_times.searchsorted(validation_candidate, side="left"))
+    test_index = int(unique_times.searchsorted(test_candidate, side="left"))
+    validation_index = max(1, min(validation_index, len(unique_times) - 2))
+    test_index = max(validation_index + 1, min(test_index, len(unique_times) - 1))
+    return unique_times[validation_index], unique_times[test_index]
 
 
 def make_split_manifest(split_keys: pd.DataFrame, spec: SplitSpec) -> pd.DataFrame:
     """Assign rows before rating-proxy derivation.
 
-    Hash protocols are stable to input order. The forward-time protocol uses
-    deterministic time rank and strict, recorded boundaries.
+    Hash protocols are stable to input order. The forward-time protocol keeps
+    equal timestamps together behind strict, recorded whole-timestamp boundaries.
     """
 
     spec.validate()
     _validate_split_keys(split_keys)
     keys = split_keys.loc[:, list(SPLIT_KEY_COLUMNS)].copy()
+    keys["event_time"] = pd.to_datetime(keys["event_time"], utc=True)
 
     if spec.protocol == "forward_time":
-        ordered = keys.sort_values(["event_time", "review_id"], kind="mergesort")
-        n_rows = len(ordered)
-        train_end = max(1, int(n_rows * spec.train_share))
-        validation_end = max(
-            train_end + 1, int(n_rows * (spec.train_share + spec.validation_share))
-        )
-        validation_end = min(validation_end, n_rows - 1)
-        partition = pd.Series("test", index=ordered.index, dtype="object")
-        partition.iloc[:train_end] = "train"
-        partition.iloc[train_end:validation_end] = "validation"
+        validation_start, test_start = _whole_timestamp_boundaries(keys, spec)
+        timestamps = pd.to_datetime(keys["event_time"], utc=True)
+        partition = pd.Series("test", index=keys.index, dtype="object")
+        partition.loc[timestamps < test_start] = "validation"
+        partition.loc[timestamps < validation_start] = "train"
         assigned = pd.DataFrame(
-            {"review_id": ordered["review_id"], "partition": partition},
-            index=ordered.index,
+            {"review_id": keys["review_id"], "partition": partition},
+            index=keys.index,
         )
     else:
         group_column = {
@@ -179,3 +209,53 @@ def partition_overlap_audit(split_keys: pd.DataFrame, manifest: pd.DataFrame) ->
             "affected_row_share": float(affected_mask.mean()),
         }
     return output
+
+
+def enforce_protocol_isolation(
+    split_keys: pd.DataFrame,
+    manifest: pd.DataFrame,
+    protocol: Protocol,
+) -> dict[str, dict[str, int | float]]:
+    """Return the overlap audit or fail when a grouped protocol leaks its unit."""
+
+    if tuple(manifest.columns) != ("review_id", "partition"):
+        raise RuntimeError("Split manifest must contain only review_id and partition")
+    if manifest["review_id"].isna().any() or manifest["review_id"].duplicated().any():
+        raise RuntimeError("Split manifest review_id values must be present and unique")
+    if set(manifest["review_id"]) != set(split_keys["review_id"]):
+        raise RuntimeError("Split manifest must assign exactly the split-key review IDs")
+    if set(manifest["partition"]) != {"train", "validation", "test"}:
+        raise RuntimeError("Split manifest must contain only three non-empty partitions")
+
+    overlap_audit = partition_overlap_audit(split_keys, manifest)
+    for column in PROTOCOL_ISOLATION_COLUMNS[protocol]:
+        if column not in overlap_audit:
+            raise RuntimeError(f"{protocol} isolation audit is missing {column}")
+        values = overlap_audit[column]
+        required = ("shared_groups", "affected_rows", "affected_row_share")
+        if any(key not in values for key in required):
+            raise RuntimeError(f"{protocol} isolation audit is incomplete for {column}")
+        numeric = [float(values[key]) for key in required]
+        if not all(math.isfinite(value) and value == 0.0 for value in numeric):
+            raise RuntimeError(
+                f"{protocol} failed isolation: {column} crosses partitions"
+            )
+    if protocol == "forward_time":
+        joined = split_keys.loc[:, ["review_id", "event_time"]].merge(
+            manifest,
+            on="review_id",
+            validate="one_to_one",
+        )
+        timestamps = pd.to_datetime(joined["event_time"], errors="coerce", utc=True)
+        if timestamps.isna().any():
+            raise RuntimeError("forward_time isolation requires parseable timestamps")
+        joined = joined.assign(event_time=timestamps)
+        if joined.groupby("event_time")["partition"].nunique().max() != 1:
+            raise RuntimeError("forward_time failed isolation: one timestamp crosses partitions")
+        bounds = joined.groupby("partition")["event_time"].agg(["min", "max"])
+        if not (
+            bounds.loc["train", "max"] < bounds.loc["validation", "min"]
+            and bounds.loc["validation", "max"] < bounds.loc["test", "min"]
+        ):
+            raise RuntimeError("forward_time failed isolation: partitions are not ordered")
+    return overlap_audit

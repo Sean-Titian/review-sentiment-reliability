@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=75", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "review-sentiment-reliability"
-version = "0.1.0"
+version = "0.2.0"
 description = "Leakage-aware reliability evaluation for rating-proxy review text classification."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Zishen Tian" }]
 dependencies = [
   "joblib>=1.4,<2",

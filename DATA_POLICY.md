@@ -8,6 +8,15 @@
 - Reproducible evaluation code, tests, and documentation
 - Download instructions that point to the original hosting pages
 
+For any future source-derived aggregate, "sufficiently coarse" means a reported
+cell has at least 100 rows and at least 20 rows from each target class. Cells
+below either threshold must be merged or suppressed. Complementary suppression
+is also required whenever totals could reveal a hidden cell, and successive
+report versions must be checked for differencing attacks. User-, product-,
+exact-date-, and text-feature-level rankings are never public, even when a cell
+is large. These rules do not authorize publication when provenance or rights
+remain unresolved.
+
 ## Not allowed in this repository
 
 - `Reviews.csv`, `database.sqlite`, `finefoods.txt.gz`, or other source copies

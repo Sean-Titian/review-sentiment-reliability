@@ -85,22 +85,37 @@ def budget_metrics(
 
 
 def select_validation_threshold(target: Iterable[int], scores: Iterable[float]) -> float:
-    """Choose an F1 threshold using validation data only."""
+    """Choose an F1 threshold in O(n log n) using validation data only.
+
+    Ties follow the original contract: maximize F1, then recall, then choose the
+    smallest threshold. The vectorized implementation avoids scanning the full
+    validation set once per unique score.
+    """
 
     y_true, probability = _as_valid_arrays(target, scores)
     if np.unique(y_true).size != 2:
         raise ValueError("Validation target must contain both proxy classes")
-    candidates = np.unique(np.r_[0.0, probability, 1.0])
-    best: tuple[float, float, float] | None = None
-    for threshold in candidates:
-        predicted = (probability >= threshold).astype(int)
-        f1 = float(f1_score(y_true, predicted, zero_division=0))
-        recall = float(recall_score(y_true, predicted, zero_division=0))
-        candidate = (f1, recall, -float(threshold))
-        if best is None or candidate > best:
-            best = candidate
-    assert best is not None
-    return float(-best[2])
+
+    order = np.argsort(probability, kind="mergesort")
+    sorted_scores = probability[order]
+    sorted_target = y_true[order]
+    positive_prefix = np.r_[0, np.cumsum(sorted_target)]
+    total_positive = int(positive_prefix[-1])
+    thresholds = np.unique(np.r_[0.0, probability, 1.0])
+    first_selected = np.searchsorted(sorted_scores, thresholds, side="left")
+    true_positive = total_positive - positive_prefix[first_selected]
+    predicted_positive = len(y_true) - first_selected
+    f1 = np.divide(
+        2.0 * true_positive,
+        predicted_positive + total_positive,
+        out=np.zeros_like(thresholds, dtype=float),
+        where=(predicted_positive + total_positive) != 0,
+    )
+    recall = true_positive / total_positive
+    best_f1 = f1.max()
+    f1_mask = f1 == best_f1
+    best_recall = recall[f1_mask].max()
+    return float(thresholds[f1_mask & (recall == best_recall)].min())
 
 
 def classification_metrics(
@@ -116,10 +131,14 @@ def classification_metrics(
     if np.unique(y_true).size != 2:
         raise ValueError("Evaluation target must contain both proxy classes")
     predicted = (probability >= threshold).astype(int)
+    average_precision = float(average_precision_score(y_true, probability))
     output: dict[str, float | int] = {
         "rows": int(len(y_true)),
         "attention_prevalence": float(y_true.mean()),
-        "pr_auc_attention": float(average_precision_score(y_true, probability)),
+        "average_precision_attention": average_precision,
+        # Compatibility alias for private adapters created before contract v1.1.
+        # Public reports intentionally emit only ``average_precision_attention``.
+        "pr_auc_attention": average_precision,
         "brier": float(brier_score_loss(y_true, probability)),
         "log_loss": float(log_loss(y_true, probability, labels=[0, 1])),
         "ece_10_bins": expected_calibration_error(y_true, probability, n_bins=10),

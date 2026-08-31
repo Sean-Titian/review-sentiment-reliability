@@ -8,14 +8,26 @@ import pytest
 from review_reliability.public_safety import assert_aggregate_report_safe
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_PARTS = {".git", ".pytest-tmp", ".pytest_cache", ".ruff_cache", "__pycache__"}
+EXCLUDED_PARTS = {
+    ".git",
+    ".pytest-tmp",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "__pycache__",
+}
 
 
 def _public_files() -> list[Path]:
     return [
         path
         for path in ROOT.rglob("*")
-        if path.is_file() and not (set(path.parts) & EXCLUDED_PARTS)
+        if path.is_file()
+        and not (set(path.parts) & EXCLUDED_PARTS)
+        and not any(part.endswith(".egg-info") for part in path.parts)
     ]
 
 
@@ -73,9 +85,25 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     report_path = ROOT / "reports" / "synthetic-benchmark.json"
     assert report_path.exists()
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["contract_version"] == "2.0"
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
     assert report["runtime_controls"]["negative_control_mode"] == (
-        "each_fingerprint_group_run_fail_closed"
+        "multi_draw_train_and_test_label_placebos_fail_closed"
     )
+    assert report["runtime_controls"]["negative_control_gate"]["passed"] is True
+    assert report["runtime_controls"]["permutation_draws_per_fingerprint_split"] == 5
+    strict_design = report["protocols"]["fingerprint_group"]["negative_control_design"]
+    assert strict_design["train_label_permutation_draws"] == 15
+    assert strict_design["test_label_alignment_draws"] == 15
+    assert "average_precision_attention" in report["metric_definitions"]
+
+    def keys(value: object) -> set[str]:
+        if isinstance(value, dict):
+            return set(value) | {key for nested in value.values() for key in keys(nested)}
+        if isinstance(value, list):
+            return {key for nested in value for key in keys(nested)}
+        return set()
+
+    assert "pr_auc_attention" not in keys(report)
     assert_aggregate_report_safe(report)

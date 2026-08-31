@@ -17,6 +17,7 @@ from review_reliability.splits import (
     PROTOCOLS,
     SplitSpec,
     attach_manifest,
+    enforce_protocol_isolation,
     make_split_manifest,
     manifest_metadata,
     partition_overlap_audit,
@@ -66,6 +67,10 @@ def test_split_input_contains_only_label_free_keys(synthetic_reviews: pd.DataFra
     contaminated = split_keys.assign(rating=5, needs_attention=0)
     with pytest.raises(ValueError, match="Target-bearing fields are forbidden"):
         make_split_manifest(contaminated, SplitSpec(protocol="row_random"))
+
+    unexpected = split_keys.assign(unapproved_field=1)
+    with pytest.raises(ValueError, match="Unexpected fields"):
+        make_split_manifest(unexpected, SplitSpec(protocol="forward_time"))
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
@@ -131,6 +136,115 @@ def test_forward_time_partitions_are_strictly_ordered(
         == bounds["validation"].min().isoformat()
     )
     assert metadata["time_bounds"]["test"]["min"] == bounds["test"].min().isoformat()
+
+
+def test_forward_time_keeps_equal_timestamps_in_one_partition(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    split_keys = make_split_keys(synthetic_reviews)
+    split_keys["event_time"] = split_keys["event_time"].dt.floor("D")
+    manifest = make_split_manifest(split_keys, SplitSpec(protocol="forward_time"))
+    joined = split_keys.merge(manifest, on="review_id", validate="one_to_one")
+
+    assert joined.groupby("event_time")["partition"].nunique().max() == 1
+    bounds = joined.groupby("partition")["event_time"].agg(["min", "max"])
+    assert bounds.loc["train", "max"] < bounds.loc["validation", "min"]
+    assert bounds.loc["validation", "max"] < bounds.loc["test", "min"]
+
+
+def test_forward_time_requires_three_unique_timestamps(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    split_keys = make_split_keys(synthetic_reviews.head(12))
+    split_keys["event_time"] = [
+        pd.Timestamp("2026-01-01", tz="UTC") if index % 2 else pd.Timestamp(
+            "2026-01-02", tz="UTC"
+        )
+        for index in range(len(split_keys))
+    ]
+    with pytest.raises(ValueError, match="at least three unique timestamps"):
+        make_split_manifest(split_keys, SplitSpec(protocol="forward_time"))
+
+
+@pytest.mark.parametrize(
+    ("protocol", "group_column"),
+    (
+        ("fingerprint_group", "near_text_fingerprint"),
+        ("user_group", "user_group"),
+        ("product_group", "product_group"),
+    ),
+)
+def test_protocol_isolation_fails_closed_on_contaminated_manifest(
+    synthetic_reviews: pd.DataFrame,
+    protocol: str,
+    group_column: str,
+) -> None:
+    split_keys = make_split_keys(synthetic_reviews)
+    manifest = make_split_manifest(split_keys, SplitSpec(protocol=protocol))
+    repeated_group = (
+        split_keys[group_column].value_counts().loc[lambda value: value >= 2].index[0]
+    )
+    repeated_ids = split_keys.loc[
+        split_keys[group_column] == repeated_group,
+        "review_id",
+    ]
+    contaminated = manifest.copy()
+    first_id = repeated_ids.iloc[0]
+    current = contaminated.loc[contaminated["review_id"] == first_id, "partition"].iloc[0]
+    replacement = "test" if current != "test" else "train"
+    contaminated.loc[contaminated["review_id"] == first_id, "partition"] = replacement
+
+    with pytest.raises(RuntimeError, match=f"{protocol} failed isolation"):
+        enforce_protocol_isolation(split_keys, contaminated, protocol)
+
+    row_manifest = make_split_manifest(split_keys, SplitSpec(protocol="row_random"))
+    enforce_protocol_isolation(split_keys, row_manifest, "row_random")
+
+
+def test_forward_time_isolation_gate_rejects_timestamp_contamination(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    split_keys = make_split_keys(synthetic_reviews)
+    split_keys["event_time"] = split_keys["event_time"].dt.floor("D")
+    manifest = make_split_manifest(split_keys, SplitSpec(protocol="forward_time"))
+    enforce_protocol_isolation(split_keys, manifest, "forward_time")
+
+    joined = split_keys.merge(manifest, on="review_id", validate="one_to_one")
+    repeated_test_time = (
+        joined.loc[joined["partition"] == "test", "event_time"]
+        .value_counts()
+        .loc[lambda value: value >= 2]
+        .index[0]
+    )
+    contaminated_id = joined.loc[
+        (joined["partition"] == "test")
+        & (joined["event_time"] == repeated_test_time),
+        "review_id",
+    ].iloc[0]
+    contaminated = manifest.copy()
+    contaminated.loc[
+        contaminated["review_id"] == contaminated_id,
+        "partition",
+    ] = "train"
+
+    with pytest.raises(RuntimeError, match="timestamp crosses partitions"):
+        enforce_protocol_isolation(split_keys, contaminated, "forward_time")
+
+
+def test_protocol_isolation_rejects_incomplete_or_extra_manifest(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    split_keys = make_split_keys(synthetic_reviews)
+    manifest = make_split_manifest(split_keys, SplitSpec(protocol="row_random"))
+
+    with pytest.raises(RuntimeError, match="assign exactly"):
+        enforce_protocol_isolation(split_keys, manifest.iloc[:-1], "row_random")
+    with pytest.raises(RuntimeError, match="contain only"):
+        enforce_protocol_isolation(
+            split_keys,
+            manifest.assign(unexpected=1),
+            "row_random",
+        )
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)

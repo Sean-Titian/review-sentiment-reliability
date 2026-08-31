@@ -15,20 +15,28 @@ model, or real-data performance claim.
 
 ## What this milestone establishes
 
+Release `0.2.0` upgrades the public artifact to evaluation contract `2.0`:
+
 - A decision contract at submission time: only `summary` and `text` are model
   features; rating and identifiers are forbidden at inference.
 - A split-first contract: label-free manifests are fixed before 3-star rows are
   excluded and the rating proxy is derived inside each partition.
 - One fitted scikit-learn pipeline owns text assembly, TF-IDF, and logistic
   regression for both training and inference.
-- Five evaluation views expose different risks: row-random, normalized-text
-  group, user group, product group, and forward time.
-- Minority PR-AUC, Brier score, calibration error, precision/recall, and
-  top-10%-budget lift are reported with prevalence; ROC-AUC is supplementary.
-- Train-prevalence, random-score, and train-label-permutation controls prevent a
-  large number from becoming an unsupported headline.
-- Missing fields, unknown words, punctuation/case changes, truncation, token
-  dropout, and prior shift are exercised without changing the serving schema.
+- Five views form a **risk-sensitivity ladder**: row-random, normalized-text
+  group, user group, product group, and whole-timestamp forward time. They
+  isolate different failure modes; they are not a total ordering of difficulty.
+- Protocol-specific overlap checks and a conflicting-fingerprint retention check
+  fail closed before an aggregate report can be released.
+- Attention-class average precision (AP), Brier score, calibration error,
+  precision/recall, and top-10%-budget lift are reported with prevalence;
+  ROC-AUC is supplementary.
+- Train-prevalence, random-score, 15 train-label permutations, and 15
+  test-label-alignment placebo draws keep leakage checks from resting on one lucky
+  null draw.
+- Missing fields, true out-of-vocabulary (OOV) text, 25% OOV token replacement,
+  punctuation/case changes, truncation, token dropout, and prior shift are
+  exercised without changing the serving schema.
 
 ## Decision contract
 
@@ -38,8 +46,10 @@ model, or real-data performance claim.
 | Prediction time | When an unscored summary and body are submitted |
 | Target | `needs_attention=1` for historical ratings 1--2; `0` for 4--5 |
 | Neutral policy | Rating 3 is excluded within each assigned partition |
-| Intended decision | Rank a fixed-capacity manual review queue |
+| Intended decision | Hypothetically rank a fixed-capacity manual review queue |
 | Model inputs | Summary and body text only |
+| Oracle warning | The source rating defines the target; if it is already visible, the model is redundant |
+| Evidence status | Operational need and production value have not been validated |
 | Claim boundary | Predictive reliability study; no causal or production-value claim |
 
 The target is a **rating-derived weak proxy**, not a human sentiment label. In a
@@ -55,7 +65,7 @@ of rows belong to a repeated normalized-text group and 16.2% of labeled rows
 belong to a fingerprint with conflicting proxy labels. This is an adversarial
 test fixture, not a claim about any commercial review dataset.
 
-| Protocol | Attention prevalence | PR-AUC | Brier | Recall @ 10% budget | Lift @ 10% budget |
+| Protocol | Attention prevalence | Average precision (AP) | Brier | Recall @ 10% budget | Lift @ 10% budget |
 |---|---:|---:|---:|---:|---:|
 | Row-random (naive diagnostic) | 0.269 | 0.443 | 0.179 | 0.200 | 2.00x |
 | Fingerprint-group | 0.242 | 0.448 | 0.162 | 0.217 | 2.14x |
@@ -63,16 +73,27 @@ test fixture, not a claim about any commercial review dataset.
 | Product-group | 0.242 | 0.462 | 0.160 | 0.221 | 2.20x |
 | Forward-time | 0.309 | 0.515 | 0.196 | 0.196 | 1.94x |
 
-Raw PR-AUC values are not directly comparable without prevalence. Here the
-strict views do not uniformly lower the score; that non-monotonic result is
-kept rather than forcing the expected story. The protocol changes which risk is
-tested, not the direction a metric must move.
+AP values are not directly comparable without prevalence because prevalence is
+the no-skill AP reference. Here the stricter views do not uniformly lower the
+score; that non-monotonic result is kept rather than forcing the expected story.
+Across three matched seeds, fingerprint grouping changed AP versus row-random by
+`+0.006` on average, ranging from `-0.056` to `+0.078`. These are descriptive
+sensitivity results on one synthetic fixture, not a superiority claim.
 
 On the fingerprint-group protocol, the training-prevalence probability baseline
-had Brier 0.184 versus 0.162 for the model. The train-label-permutation control
-returned mean PR-AUC 0.283 at prevalence 0.242 and ROC-AUC 0.511. Every
-permutation run passed the fail-closed chance-range check before the report was
-written. The exact aggregate values and descriptive multi-seed ranges are in
+had Brier 0.184 versus 0.162 for the model. Across 15 train-label permutations,
+mean AP/prevalence was 1.117, lift@10% was 1.128, and ROC-AUC was 0.500. Across
+15 test-label-alignment placebo draws, the corresponding means were
+1.009, 0.964, and 0.496. Every draw and both aggregate means passed fixed,
+explicit fail-closed chance gates before the report was written.
+
+The OOV-only stress case was also made structural rather than cosmetic: 100% of
+rows produced zero TF-IDF vectors, AP fell exactly to prevalence (0.242), and
+the mean absolute probability change was 0.134. Because all resulting scores
+tied, arbitrary row-order recall/lift values are omitted. Replacing every fourth
+body token (25% where length permits) produced 28.6% observed OOV tokens and a
+mean probability change of 0.021. These numbers diagnose this authored fixture
+only. Exact gates, ranges, and aggregate evidence are in
 [`reports/synthetic-benchmark.json`](reports/synthetic-benchmark.json).
 
 These min/max ranges describe split or optimizer sensitivity on one synthetic
@@ -89,7 +110,8 @@ python -m pip install --no-deps -e .
 # Fast synthetic smoke run; writes an ignored demo artifact.
 python -m review_reliability demo
 
-# Canonical five-protocol, multi-seed report with fail-closed permutation checks.
+# Canonical five-protocol report: three hash-split seeds, whole-time view,
+# five permutations per fingerprint split, and matched label-alignment placebos.
 python -m review_reliability benchmark
 ```
 
@@ -108,10 +130,13 @@ workflow downloads review data.
 ```text
 validate label-free split fields
   -> build immutable train / validation / test manifest
+  -> fail closed on protocol-specific cross-partition overlap
   -> derive rating proxy and exclude rating 3 inside each partition
+  -> verify target-conflicting fingerprints were retained
+     (the fingerprint protocol also co-locates them)
   -> fit text pipeline on train only
   -> choose decision threshold on validation only
-  -> evaluate test once against baselines, controls, and stress cases
+  -> evaluate test once against baselines, two null designs, and stress cases
   -> validate and write aggregate-only JSON
 ```
 
@@ -145,15 +170,17 @@ before attempting any separate private real-data study.
 - A single forward cutoff is not a full rolling temporal validation.
 - Token-set grouping is a transparent MVP approximation, not a scalable
   semantic near-duplicate system.
-- The current source benchmark remains private until its old target-aware
-  global conflict filtering is replaced by a corrected split-first run.
+- A corrected split-first source audit exists privately, but data rights,
+  multi-seed/time sensitivity, and safe aggregation requirements still block
+  release of any real-data metric.
 
 ## Next evidence, not extra buzzwords
 
-1. Add a private, split-first adapter and publish only safe aggregate results if
-   data rights permit.
+1. Resolve source-data rights before considering any real-data aggregate; keep
+   the private split-first adapter as audit evidence until then.
 2. Add rolling forward windows, cluster/bootstrap uncertainty, and threshold
    sensitivity.
 3. Scale near-duplicate detection with MinHash/LSH and quantify false merges.
 4. Evaluate calibration transfer and recall under realistic prior drift.
-5. Add error slices only when they are large enough to remain anonymous.
+5. Add error slices only when they pass the documented small-cell and
+   differencing checks.

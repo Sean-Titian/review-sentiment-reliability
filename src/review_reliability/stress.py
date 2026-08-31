@@ -10,6 +10,13 @@ import pandas as pd
 from review_reliability.data import TARGET_COLUMN
 from review_reliability.modeling import FEATURE_COLUMNS
 
+OOV_SENTINELS = (
+    "novelsummarytokenzx",
+    "novelbodytokenqy",
+    "driftwordqz",
+    "novelreplacementtokenzx",
+)
+
 
 def _copy_features(labeled_frame: pd.DataFrame) -> pd.DataFrame:
     return labeled_frame.loc[:, list(FEATURE_COLUMNS)].copy()
@@ -42,9 +49,10 @@ def text_stress_cases(labeled_test: pd.DataFrame, seed: int) -> dict[str, pd.Dat
         )
     cases["case_and_punctuation"] = case_punctuation
 
-    unknown = _copy_features(labeled_test)
-    unknown["text"] = unknown["text"].fillna("").astype(str) + " noveltokenzx driftwordqy"
-    cases["unknown_tokens"] = unknown
+    oov_only = _copy_features(labeled_test)
+    oov_only["summary"] = "novelsummarytokenzx"
+    oov_only["text"] = "novelbodytokenqy driftwordqz"
+    cases["oov_only_user_content"] = oov_only
 
     truncated = _copy_features(labeled_test)
     truncated["text"] = truncated["text"].fillna("").astype(str).map(
@@ -59,6 +67,15 @@ def text_stress_cases(labeled_test: pd.DataFrame, seed: int) -> dict[str, pd.Dat
         )
     )
     cases["token_dropout_25pct"] = dropout
+
+    replacement = _copy_features(labeled_test)
+    replacement["text"] = replacement["text"].fillna("").astype(str).map(
+        lambda value: " ".join(
+            "novelreplacementtokenzx" if (index + 1) % 4 == 0 else token
+            for index, token in enumerate(value.split())
+        )
+    )
+    cases["token_replacement_25pct"] = replacement
     return cases
 
 

@@ -8,8 +8,29 @@ from pathlib import Path
 from typing import Any
 
 from review_reliability.data import SyntheticConfig
-from review_reliability.evaluation import run_synthetic_benchmark
+from review_reliability.evaluation import (
+    PERMUTATION_DRAWS_PER_SPLIT,
+    run_synthetic_benchmark,
+)
 from review_reliability.public_safety import assert_aggregate_report_safe
+
+REPORT_FLOAT_DECIMALS = 10
+
+
+def _canonicalize_report_values(value: Any) -> Any:
+    """Remove immaterial solver tails before deterministic JSON serialization."""
+
+    if isinstance(value, float):
+        rounded = round(value, REPORT_FLOAT_DECIMALS)
+        return 0.0 if rounded == 0.0 else rounded
+    if isinstance(value, dict):
+        return {
+            key: _canonicalize_report_values(nested)
+            for key, nested in value.items()
+        }
+    if isinstance(value, list):
+        return [_canonicalize_report_values(nested) for nested in value]
+    return value
 
 
 def _parse_seeds(value: str) -> tuple[int, ...]:
@@ -23,14 +44,17 @@ def _parse_seeds(value: str) -> tuple[int, ...]:
 
 
 def write_aggregate_report(report: dict[str, Any], output: Path) -> None:
-    """Validate and write a deterministic, aggregate-only JSON report."""
+    """Validate and write a numerically canonical, aggregate-only JSON report."""
 
-    assert_aggregate_report_safe(report)
+    canonical = _canonicalize_report_values(report)
+    assert_aggregate_report_safe(canonical)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n",
-        encoding="utf-8",
+    serialized = (
+        json.dumps(canonical, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
+        + "\n"
     )
+    with output.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(serialized)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -44,6 +68,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rows", type=int, default=None)
     parser.add_argument("--synthetic-seed", type=int, default=20260828)
     parser.add_argument("--evaluation-seeds", type=_parse_seeds, default=(1103, 2909, 4703))
+    parser.add_argument(
+        "--permutation-draws",
+        type=int,
+        default=PERMUTATION_DRAWS_PER_SPLIT,
+    )
     parser.add_argument("--output", type=Path, default=None)
     return parser
 
@@ -59,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     report = run_synthetic_benchmark(
         config=config,
         seeds=seeds,
+        permutation_draws=(1 if demo else args.permutation_draws),
         enforce_negative_control=not demo,
     )
     output = args.output
@@ -69,12 +99,14 @@ def main(argv: list[str] | None = None) -> int:
             else Path("reports/synthetic-benchmark.json")
         )
     write_aggregate_report(report, output)
-    summary = report["naive_vs_strict_summary"]
+    ladder = {
+        item["protocol"]: item for item in report["protocol_sensitivity_ladder"]
+    }
     print("Synthetic reliability fixture complete; these are not real-data performance claims.")
     print(
-        "Attention PR-AUC (row / fingerprint-group / time): "
-        f"{summary['row_random_mean']:.3f} / "
-        f"{summary['fingerprint_group_mean']:.3f} / "
-        f"{summary['forward_time_mean']:.3f}"
+        "Attention average precision (row / fingerprint-group / time): "
+        f"{ladder['row_random']['average_precision']:.3f} / "
+        f"{ladder['fingerprint_group']['average_precision']:.3f} / "
+        f"{ladder['forward_time']['average_precision']:.3f}"
     )
     return 0
