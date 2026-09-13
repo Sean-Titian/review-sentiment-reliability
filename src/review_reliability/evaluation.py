@@ -39,6 +39,11 @@ from review_reliability.splits import (
     manifest_metadata,
 )
 from review_reliability.stress import OOV_SENTINELS, prior_shift_slice, text_stress_cases
+from review_reliability.temporal import run_rolling_origin_backtest
+from review_reliability.uncertainty import (
+    DEFAULT_BOOTSTRAP_DRAWS,
+    conditional_cluster_bootstrap,
+)
 
 REPORT_METRICS = (
     "rows",
@@ -55,6 +60,9 @@ REPORT_METRICS = (
     "accuracy_supplementary",
     "threshold",
     "budget_count",
+    "budget_cutoff_tied_rows",
+    "budget_cutoff_tied_weight",
+    "budget_cutoff_fraction_selected",
     "precision_at_budget",
     "recall_at_budget",
     "lift_at_budget",
@@ -62,7 +70,16 @@ REPORT_METRICS = (
 CONSTANT_BASELINE_METRICS = tuple(
     metric
     for metric in REPORT_METRICS
-    if metric not in {"budget_count", "precision_at_budget", "recall_at_budget", "lift_at_budget"}
+    if metric
+    not in {
+        "budget_count",
+        "budget_cutoff_tied_rows",
+        "budget_cutoff_tied_weight",
+        "budget_cutoff_fraction_selected",
+        "precision_at_budget",
+        "recall_at_budget",
+        "lift_at_budget",
+    }
 )
 STRESS_METRICS = (
     "rows",
@@ -209,6 +226,8 @@ def _run_protocol_once(
     seed: int,
     *,
     permutation_draws: int,
+    bootstrap_draws: int = 0,
+    enforce_bootstrap_gate: bool = False,
 ) -> dict[str, object]:
     spec = SplitSpec(protocol=protocol, seed=seed)
     manifest = make_split_manifest(split_keys, spec)
@@ -249,6 +268,24 @@ def _run_protocol_once(
     random_metrics = classification_metrics(
         test[TARGET_COLUMN], random_test, threshold=random_threshold, budget_share=0.10
     )
+
+    conditional_uncertainty = None
+    if bootstrap_draws:
+        cluster_frame = test.loc[:, ["review_id"]].merge(
+            split_keys.loc[:, ["review_id", "near_text_fingerprint"]],
+            on="review_id",
+            validate="one_to_one",
+            sort=False,
+        )
+        conditional_uncertainty = conditional_cluster_bootstrap(
+            test[TARGET_COLUMN],
+            test_scores,
+            cluster_frame["near_text_fingerprint"],
+            train_prevalence=train_prevalence,
+            draws=bootstrap_draws,
+            seed=seed + 70_003,
+            enforce_release_gate=enforce_bootstrap_gate,
+        )
 
     partitions = {}
     for name, partition in (("train", train), ("validation", validation), ("test", test)):
@@ -327,6 +364,7 @@ def _run_protocol_once(
             test_scores,
             seed,
         ),
+        "conditional_cluster_bootstrap": conditional_uncertainty,
     }
 
 
@@ -651,6 +689,7 @@ def run_synthetic_benchmark(
     seeds: tuple[int, ...] = (1103, 2909, 4703),
     protocols: tuple[Protocol, ...] = PROTOCOLS,
     permutation_draws: int = PERMUTATION_DRAWS_PER_SPLIT,
+    bootstrap_draws: int = DEFAULT_BOOTSTRAP_DRAWS,
     enforce_negative_control: bool = True,
 ) -> dict[str, object]:
     """Run all public reliability gates and return an aggregate-only artifact."""
@@ -660,9 +699,15 @@ def run_synthetic_benchmark(
         raise ValueError("At least one evaluation seed is required")
     if permutation_draws <= 0:
         raise ValueError("At least one permutation draw per strict split is required")
+    if bootstrap_draws < 0:
+        raise ValueError("bootstrap_draws must be non-negative")
     if enforce_negative_control and permutation_draws < PERMUTATION_DRAWS_PER_SPLIT:
         raise ValueError(
             "Release-gated benchmark requires at least five permutation draws per strict split"
+        )
+    if enforce_negative_control and bootstrap_draws < DEFAULT_BOOTSTRAP_DRAWS:
+        raise ValueError(
+            "Release-gated benchmark requires at least 2,000 cluster-bootstrap draws"
         )
     required_protocols = {"row_random", "fingerprint_group", "forward_time"}
     missing_protocols = required_protocols - set(protocols)
@@ -685,6 +730,16 @@ def run_synthetic_benchmark(
                 seed,
                 permutation_draws=(
                     permutation_draws if protocol == "fingerprint_group" else 0
+                ),
+                bootstrap_draws=(
+                    bootstrap_draws
+                    if protocol == "fingerprint_group" and seed == seeds[0]
+                    else 0
+                ),
+                enforce_bootstrap_gate=(
+                    enforce_negative_control
+                    if protocol == "fingerprint_group" and seed == seeds[0]
+                    else False
                 ),
             )
             for seed in protocol_seeds
@@ -727,9 +782,18 @@ def run_synthetic_benchmark(
 
     sensitivity_ladder = _protocol_sensitivity_ladder(protocol_reports)
     strict_gap = _paired_strict_gap(raw_runs)
+    conditional_uncertainty = raw_runs["fingerprint_group"][0][
+        "conditional_cluster_bootstrap"
+    ]
+    rolling_origin = run_rolling_origin_backtest(
+        frame,
+        split_keys,
+        placebo_draws_per_window=(20 if enforce_negative_control else 5),
+        enforce_placebo_gate=enforce_negative_control,
+    )
 
     return {
-        "contract_version": "2.0",
+        "contract_version": "3.0",
         "artifact_scope": "aggregate_only_synthetic_reliability_fixture",
         "synthetic_data": True,
         "source_rows_included": False,
@@ -744,8 +808,14 @@ def run_synthetic_benchmark(
                 "Ranking metric reported only as a supplementary discrimination view."
             ),
             "budget_ranking_tie_policy": (
-                "Recall and lift at budget are omitted when all scores tie because row-order "
-                "tie breaking does not define a model ranking."
+                "A cutoff score tie uses fractional expected allocation, independent of row "
+                "order. Stress and conditional-uncertainty summaries omit recall and lift "
+                "when all scores tie because no model ranking exists."
+            ),
+            "conditional_cluster_bootstrap": (
+                "A 95% percentile interval for one frozen fingerprint-group scoring rule, "
+                "using near-text-fingerprint pairs resampling; separate from multi-seed and "
+                "rolling-origin sensitivity ranges."
             ),
             "sensitivity_ranges": (
                 "Mean, sample standard deviation, minimum, and maximum across deterministic "
@@ -781,7 +851,7 @@ def run_synthetic_benchmark(
             "hash_protocols": "all listed seeds vary split assignment and model seed",
             "forward_time": (
                 "one fixed chronological cutoff with whole-timestamp boundaries using the "
-                "first seed; no repeated-cutoff uncertainty claim"
+                "first seed; complemented by a separate four-window rolling-origin backtest"
             ),
             "summary": (
                 "mean/std/min/max are descriptive sensitivity ranges, not confidence intervals"
@@ -791,6 +861,12 @@ def run_synthetic_benchmark(
         "protocols": protocol_reports,
         "protocol_sensitivity_ladder": sensitivity_ladder,
         "paired_strict_gap": strict_gap,
+        "conditional_uncertainty": {
+            "reference_protocol": "fingerprint_group",
+            "reference_evaluation_seed": seeds[0],
+            "result": conditional_uncertainty,
+        },
+        "rolling_origin_backtest": rolling_origin,
         "runtime_controls": {
             "split_input_columns": list(split_keys.columns),
             "target_bearing_split_columns": sorted(
@@ -810,9 +886,16 @@ def run_synthetic_benchmark(
             ),
             "permutation_draws_per_fingerprint_split": permutation_draws,
             "negative_control_gate": negative_control_gate,
+            "conditional_uncertainty_release_gate": (
+                conditional_uncertainty["release_gate"]
+                if conditional_uncertainty is not None
+                else {"passed": None, "enforced": False}
+            ),
+            "rolling_origin_temporal_separation": True,
+            "rolling_origin_cross_boundary_entity_isolation": False,
             "legacy_metric_alias": (
                 "classification_metrics keeps pr_auc_attention for private adapter "
-                "compatibility; contract 2.0 reports emit only average_precision_attention"
+                "compatibility; contract 3.0 reports emit only average_precision_attention"
             ),
             "public_safety_validation": "performed_by_CLI_before_write",
         },
@@ -832,12 +915,21 @@ def run_synthetic_benchmark(
             ),
             (
                 "A corrected split-first source audit exists privately, but source rights, "
-                "multi-seed/time sensitivity, and public-safe aggregation still block any "
-                "real-data metric release."
+                "target validity, and public-safe aggregation still block any real-data "
+                "metric release."
             ),
             (
                 "Multi-seed min/max values describe protocol and optimizer sensitivity; they are "
                 "not sampling confidence intervals."
+            ),
+            (
+                "The conditional cluster-bootstrap interval holds one synthetic fitted model "
+                "and test manifest fixed; it does not cover retraining, crossed dependence, "
+                "source selection, temporal drift, or real-data generalization."
+            ),
+            (
+                "Rolling-origin windows preserve chronology but allow recurring text, users, "
+                "and products across time; those overlaps are audited rather than removed."
             ),
         ],
     }

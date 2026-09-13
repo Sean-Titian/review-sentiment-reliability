@@ -5,7 +5,10 @@ finefoods.txt
 finefoods.txt.gz
 *.sqlite
 *.sqlite3
+*.db
 *.csv
+*.jsonl
+*.ndjson
 *.parquet
 *.feather
 *.arrow
@@ -21,6 +24,12 @@ models/
 *.pickle
 *.joblib
 *.onnx
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+.env
+.env.*
 
 # Python and local tooling.
 __pycache__/

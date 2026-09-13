@@ -52,10 +52,17 @@ def test_repository_contains_no_data_model_archive_or_large_file() -> None:
         ".parquet",
         ".sqlite",
         ".sqlite3",
+        ".db",
+        ".jsonl",
+        ".ndjson",
         ".pkl",
         ".pickle",
         ".joblib",
         ".onnx",
+        ".pt",
+        ".pth",
+        ".ckpt",
+        ".safetensors",
         ".zip",
         ".gz",
         ".7z",
@@ -66,7 +73,40 @@ def test_repository_contains_no_data_model_archive_or_large_file() -> None:
     }
     files = _public_files()
     assert all(path.suffix.lower() not in forbidden_suffixes for path in files)
+    assert all(path.name != ".env" and not path.name.startswith(".env.") for path in files)
     assert all(path.stat().st_size < 1_000_000 for path in files)
+
+
+def test_repository_ignore_rules_cover_common_private_data_and_model_formats() -> None:
+    ignore_text = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    for pattern in (
+        "*.jsonl",
+        "*.ndjson",
+        "*.db",
+        "*.pt",
+        "*.pth",
+        "*.ckpt",
+        "*.safetensors",
+        ".env",
+        ".env.*",
+    ):
+        assert pattern in ignore_text
+
+
+@pytest.mark.parametrize(
+    "forbidden_key",
+    (
+        "cluster_ids",
+        "cluster_keys",
+        "resample_indices",
+        "sample_indices",
+        "row_indices",
+        "bootstrap_draws",
+    ),
+)
+def test_report_safety_rejects_bootstrap_rows_or_cluster_keys(forbidden_key: str) -> None:
+    with pytest.raises(ValueError, match="row-level"):
+        assert_aggregate_report_safe({forbidden_key: [0, 1]})
 
 
 def test_repository_text_has_no_private_path_course_name_or_drive_link() -> None:
@@ -85,14 +125,36 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     report_path = ROOT / "reports" / "synthetic-benchmark.json"
     assert report_path.exists()
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["contract_version"] == "2.0"
+    assert report["contract_version"] == "3.0"
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
+    assert report["source_trained_artifacts_included"] is False
     assert report["runtime_controls"]["negative_control_mode"] == (
         "multi_draw_train_and_test_label_placebos_fail_closed"
     )
     assert report["runtime_controls"]["negative_control_gate"]["passed"] is True
     assert report["runtime_controls"]["permutation_draws_per_fingerprint_split"] == 5
+    bootstrap_gate = report["conditional_uncertainty"]["result"]["release_gate"]
+    assert bootstrap_gate["enforced"] is True
+    assert bootstrap_gate["passed"] is True
+    assert report["rolling_origin_backtest"]["summary"][
+        "all_test_horizons_non_overlapping"
+    ] is True
+    assert report["rolling_origin_backtest"]["summary"][
+        "all_training_histories_expanding"
+    ] is True
+    rolling_windows = report["rolling_origin_backtest"]["windows"]
+    assert len(rolling_windows) == 4
+    assert all(
+        window["test_label_alignment_placebo"]["gate"]["enforced"] is True
+        and window["test_label_alignment_placebo"]["gate"]["passed"] is True
+        for window in rolling_windows
+    )
+    pooled_temporal_gate = report["rolling_origin_backtest"]["summary"][
+        "test_label_alignment_placebo_gate"
+    ]
+    assert pooled_temporal_gate["enforced"] is True
+    assert pooled_temporal_gate["passed"] is True
     strict_design = report["protocols"]["fingerprint_group"]["negative_control_design"]
     assert strict_design["train_label_permutation_draws"] == 15
     assert strict_design["test_label_alignment_draws"] == 15

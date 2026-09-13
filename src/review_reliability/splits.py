@@ -53,6 +53,39 @@ class SplitSpec:
             raise ValueError("train, validation, and test shares must be positive and sum to 1")
 
 
+@dataclass(frozen=True)
+class RollingOriginSpec:
+    """Expanding-window backtest configuration over label-free time blocks."""
+
+    first_train_share: float = 0.50
+    validation_share: float = 0.10
+    test_share: float = 0.10
+    step_share: float = 0.10
+    windows: int = 4
+
+    def validate(self) -> None:
+        shares = (
+            self.first_train_share,
+            self.validation_share,
+            self.test_share,
+            self.step_share,
+        )
+        if any(not math.isfinite(share) or share <= 0 for share in shares):
+            raise ValueError("Rolling-origin shares must be positive and finite")
+        if isinstance(self.windows, bool) or not isinstance(self.windows, int) or self.windows < 2:
+            raise ValueError("Rolling-origin evaluation requires at least two windows")
+        if self.step_share + 1e-12 < self.test_share:
+            raise ValueError("Rolling-origin step share must prevent overlapping test windows")
+        final_test_end = (
+            self.first_train_share
+            + self.validation_share
+            + self.test_share
+            + self.step_share * (self.windows - 1)
+        )
+        if final_test_end > 1.0 + 1e-12:
+            raise ValueError("Rolling-origin windows extend beyond the available time range")
+
+
 def _stable_unit_interval(value: object, seed: int) -> float:
     payload = f"{seed}|{value}".encode()
     integer = int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
@@ -148,6 +181,80 @@ def make_split_manifest(split_keys: pd.DataFrame, spec: SplitSpec) -> pd.DataFra
     if set(counts.index) != {"train", "validation", "test"}:
         raise ValueError("Every split must produce train, validation, and test partitions")
     return manifest
+
+
+def make_rolling_origin_manifests(
+    split_keys: pd.DataFrame,
+    spec: RollingOriginSpec | None = None,
+) -> tuple[pd.DataFrame, ...]:
+    """Build expanding train, validation, and disjoint test windows.
+
+    Boundaries are chosen from label-free row positions and then snapped to the
+    beginning of a timestamp block. Rows after a window's test horizon are absent
+    from that manifest, so future records cannot enter fitting or threshold choice.
+    """
+
+    spec = spec or RollingOriginSpec()
+    spec.validate()
+    _validate_split_keys(split_keys)
+    keys = split_keys.loc[:, list(SPLIT_KEY_COLUMNS)].copy()
+    keys["event_time"] = pd.to_datetime(keys["event_time"], utc=True)
+    ordered = keys.sort_values(["event_time", "review_id"], kind="mergesort")
+    unique_times = pd.Index(ordered["event_time"].drop_duplicates())
+    if len(unique_times) < 3 * spec.windows:
+        raise ValueError("Rolling-origin evaluation has too few unique timestamp blocks")
+
+    def boundary_index(share: float) -> int:
+        position = min(
+            int(math.floor(len(ordered) * share + 1e-12)),
+            len(ordered) - 1,
+        )
+        candidate = ordered["event_time"].iloc[position]
+        return int(unique_times.searchsorted(candidate, side="left"))
+
+    manifests: list[pd.DataFrame] = []
+    prior_test_ids: set[object] = set()
+    for window_index in range(spec.windows):
+        train_end_share = spec.first_train_share + spec.step_share * window_index
+        validation_end_share = train_end_share + spec.validation_share
+        test_end_share = validation_end_share + spec.test_share
+        train_end_index = boundary_index(train_end_share)
+        validation_end_index = boundary_index(validation_end_share)
+        test_end_index = (
+            len(unique_times)
+            if test_end_share >= 1.0 - 1e-12
+            else boundary_index(test_end_share)
+        )
+        if not 0 < train_end_index < validation_end_index < test_end_index <= len(
+            unique_times
+        ):
+            raise ValueError("Rolling-origin boundaries collapse timestamp partitions")
+
+        train_end = unique_times[train_end_index]
+        validation_end = unique_times[validation_end_index]
+        test_end = unique_times[test_end_index] if test_end_index < len(unique_times) else None
+        timestamps = keys["event_time"]
+        eligible = pd.Series(True, index=keys.index)
+        if test_end is not None:
+            eligible &= timestamps < test_end
+        partition = pd.Series("test", index=keys.index, dtype="object")
+        partition.loc[timestamps < validation_end] = "validation"
+        partition.loc[timestamps < train_end] = "train"
+        manifest = pd.DataFrame(
+            {
+                "review_id": keys.loc[eligible, "review_id"],
+                "partition": partition.loc[eligible],
+            }
+        ).sort_values("review_id", kind="mergesort", ignore_index=True)
+        if set(manifest["partition"]) != {"train", "validation", "test"}:
+            raise ValueError("Every rolling window must contain three non-empty partitions")
+        test_ids = set(manifest.loc[manifest["partition"] == "test", "review_id"])
+        if prior_test_ids & test_ids:
+            raise RuntimeError("Rolling-origin test windows must not overlap")
+        prior_test_ids |= test_ids
+        manifests.append(manifest)
+
+    return tuple(manifests)
 
 
 def attach_manifest(frame: pd.DataFrame, manifest: pd.DataFrame) -> pd.DataFrame:

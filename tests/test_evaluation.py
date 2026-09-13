@@ -19,6 +19,7 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
         seeds=(17,),
         protocols=("row_random", "fingerprint_group", "forward_time"),
         permutation_draws=1,
+        bootstrap_draws=40,
         enforce_negative_control=False,
     )
     assert report["synthetic_data"] is True
@@ -33,10 +34,13 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
     assert strict["negative_control_train_label_permutation"] is not None
     assert strict["placebo_test_label_alignment"] is not None
     assert strict["conflict_retention_gate"]["all_runs_passed"] is True
-    assert report["contract_version"] == "2.0"
+    assert report["contract_version"] == "3.0"
     assert report["runtime_controls"]["protocol_isolation_fail_closed"] is True
     assert report["decision_contract"]["causal_claim"] is False
     assert report["runtime_controls"]["target_bearing_split_columns"] == []
+    assert report["conditional_uncertainty"]["reference_protocol"] == "fingerprint_group"
+    assert report["conditional_uncertainty"]["result"]["draws_attempted"] == 40
+    assert report["rolling_origin_backtest"]["summary"]["windows"] == 4
     assert_aggregate_report_safe(report)
 
 
@@ -46,6 +50,7 @@ def test_stress_cases_keep_finite_aggregate_metrics() -> None:
         seeds=(23,),
         protocols=("row_random", "fingerprint_group", "forward_time"),
         permutation_draws=1,
+        bootstrap_draws=40,
         enforce_negative_control=False,
     )
     stress = report["protocols"]["forward_time"]["stress"]
@@ -137,6 +142,14 @@ def test_release_gate_requires_five_permutations_per_strict_split() -> None:
     with pytest.raises(ValueError, match="at least five permutation draws"):
         run_synthetic_benchmark(
             permutation_draws=4,
+            enforce_negative_control=True,
+        )
+
+
+def test_release_gate_requires_two_thousand_cluster_bootstrap_draws() -> None:
+    with pytest.raises(ValueError, match="2,000 cluster-bootstrap draws"):
+        run_synthetic_benchmark(
+            bootstrap_draws=1_999,
             enforce_negative_control=True,
         )
 

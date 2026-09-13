@@ -22,6 +22,72 @@ def test_budget_metrics_use_ceil_and_stable_top_scores() -> None:
     assert metrics["lift_at_budget"] == pytest.approx(1.25)
 
 
+def test_budget_cutoff_ties_use_fractional_order_invariant_allocation() -> None:
+    target = np.asarray([1, 0, 1, 0])
+    scores = np.asarray([0.9, 0.8, 0.8, 0.1])
+    expected = budget_metrics(target, scores, budget_share=0.50)
+    shuffled = budget_metrics(target[[2, 0, 3, 1]], scores[[2, 0, 3, 1]], budget_share=0.50)
+
+    assert expected["budget_count"] == 2
+    assert expected["budget_cutoff_tied_rows"] == 2
+    assert expected["budget_cutoff_fraction_selected"] == pytest.approx(0.5)
+    assert expected["precision_at_budget"] == pytest.approx(0.75)
+    assert expected["recall_at_budget"] == pytest.approx(0.75)
+    assert expected["lift_at_budget"] == pytest.approx(1.5)
+    for metric in ("precision_at_budget", "recall_at_budget", "lift_at_budget"):
+        assert shuffled[metric] == pytest.approx(expected[metric])
+
+
+def test_frequency_weighted_budget_matches_explicit_cluster_replication() -> None:
+    target = np.asarray([1, 0, 1, 0])
+    scores = np.asarray([0.9, 0.8, 0.8, 0.1])
+    frequency = np.asarray([2, 0, 1, 3])
+    weighted = budget_metrics(
+        target,
+        scores,
+        budget_share=0.50,
+        sample_weight=frequency,
+    )
+    repeated_target = np.repeat(target, frequency)
+    repeated_scores = np.repeat(scores, frequency)
+    explicit = budget_metrics(repeated_target, repeated_scores, budget_share=0.50)
+
+    for metric in (
+        "budget_count",
+        "budget_cutoff_tied_weight",
+        "budget_cutoff_fraction_selected",
+        "precision_at_budget",
+        "recall_at_budget",
+        "lift_at_budget",
+    ):
+        assert weighted[metric] == pytest.approx(explicit[metric])
+
+
+def test_budget_weights_must_be_integer_frequencies() -> None:
+    with pytest.raises(ValueError, match="integer frequency"):
+        budget_metrics(
+            [0, 1],
+            [0.2, 0.8],
+            sample_weight=[0.5, 1.5],
+        )
+
+
+def test_budget_weights_round_numerically_near_integer_frequencies() -> None:
+    expected = budget_metrics(
+        [0, 1, 1],
+        [0.2, 0.8, 0.8],
+        budget_share=0.50,
+        sample_weight=[1.0, 2.0, 1.0],
+    )
+    near_integer = budget_metrics(
+        [0, 1, 1],
+        [0.2, 0.8, 0.8],
+        budget_share=0.50,
+        sample_weight=[1.0 + 5e-13, 2.0 - 5e-13, 1.0],
+    )
+    assert near_integer == expected
+
+
 def test_known_brier_and_calibration_values() -> None:
     target = [0, 1, 1, 0]
     scores = [0.1, 0.8, 0.7, 0.4]

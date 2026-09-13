@@ -15,13 +15,94 @@ from review_reliability.data import (
 )
 from review_reliability.splits import (
     PROTOCOLS,
+    RollingOriginSpec,
     SplitSpec,
     attach_manifest,
     enforce_protocol_isolation,
+    make_rolling_origin_manifests,
     make_split_manifest,
     manifest_metadata,
     partition_overlap_audit,
 )
+
+
+def test_default_rolling_origins_expand_history_and_keep_test_horizons_disjoint(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    keys = make_split_keys(synthetic_reviews)
+    manifests = make_rolling_origin_manifests(keys)
+    assert len(manifests) == 4
+    assert [len(manifest) for manifest in manifests] == [840, 960, 1080, 1200]
+
+    prior_train: set[str] = set()
+    all_test: set[str] = set()
+    for manifest in manifests:
+        current_train = set(manifest.loc[manifest["partition"] == "train", "review_id"])
+        current_test = set(manifest.loc[manifest["partition"] == "test", "review_id"])
+        if prior_train:
+            assert prior_train < current_train
+        else:
+            assert current_train
+        assert not (all_test & current_test)
+        prior_train = current_train
+        all_test |= current_test
+
+
+def test_rolling_origins_are_label_and_input_order_invariant(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    keys = make_split_keys(synthetic_reviews)
+    altered = synthetic_reviews.copy()
+    altered["rating"] = altered["rating"].map({1: 5, 2: 4, 3: 3, 4: 2, 5: 1})
+    altered_keys = make_split_keys(altered)
+    shuffled_keys = keys.sample(frac=1.0, random_state=91).reset_index(drop=True)
+    expected = make_rolling_origin_manifests(keys)
+    for candidate in (
+        make_rolling_origin_manifests(altered_keys),
+        make_rolling_origin_manifests(shuffled_keys),
+    ):
+        for expected_manifest, candidate_manifest in zip(expected, candidate, strict=True):
+            pd.testing.assert_frame_equal(expected_manifest, candidate_manifest)
+
+
+def test_rolling_origins_keep_timestamp_blocks_intact(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    keys = make_split_keys(synthetic_reviews)
+    paired_times = keys["event_time"].iloc[::2].repeat(2).iloc[: len(keys)].reset_index(drop=True)
+    keys = keys.copy()
+    keys["event_time"] = paired_times
+    for manifest in make_rolling_origin_manifests(keys):
+        joined = keys[["review_id", "event_time"]].merge(
+            manifest,
+            on="review_id",
+            validate="one_to_one",
+        )
+        assert joined.groupby("event_time")["partition"].nunique().max() == 1
+
+
+@pytest.mark.parametrize(
+    "spec, message",
+    [
+        (RollingOriginSpec(windows=True), "at least two windows"),
+        (RollingOriginSpec(windows=2.5), "at least two windows"),
+        (
+            RollingOriginSpec(test_share=0.15, step_share=0.10),
+            "prevent overlapping test windows",
+        ),
+        (
+            RollingOriginSpec(first_train_share=0.70),
+            "extend beyond",
+        ),
+    ],
+)
+def test_invalid_rolling_origin_specs_fail_closed(
+    synthetic_reviews: pd.DataFrame,
+    spec: RollingOriginSpec,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        make_rolling_origin_manifests(make_split_keys(synthetic_reviews), spec)
 
 
 @pytest.fixture(scope="module")

@@ -10,16 +10,25 @@ python -m review_reliability benchmark
 The CLI validates the report before writing it. The artifact contains contract
 metadata, counts, proportions, average precision and calibration metrics,
 descriptive multi-seed ranges, fail-closed overlap gates, two permutation-null
-designs, and stress diagnostics. It contains no row, review
-text, identifier, local path, source-trained model, or restricted source data.
+designs, four rolling-origin windows, temporal label placebos, one conditional
+near-fingerprint cluster-bootstrap interval set, and stress diagnostics. It
+contains no row, review text, identifier, cluster key, resample index, local path,
+source-trained model, or restricted source data.
 To prevent immaterial solver/BLAS tails from changing the tracked artifact,
 serialized floating-point values are canonicalized to 10 decimal places.
 
 The numbers demonstrate that the reliability harness runs on an authored
-synthetic fixture. They are not estimates of real review performance and are
-not confidence intervals. Contract 2.0 calls scikit-learn's non-interpolated
-metric `average_precision_attention`; it does not label it generic PR-AUC.
-Budget ranking metrics are omitted for stress cases whose scores all tie because
-stable row-order tie breaking would not represent a model ranking.
+synthetic fixture; they are not estimates of real review performance. Multi-seed
+and rolling-origin ranges are descriptive, not confidence intervals. Contract
+3.0 separately labels its frozen strict-split percentile intervals as conditional
+on one fitted model, manifest, and synthetic test fixture. They do not cover
+retraining, crossed user/product dependence, source selection, temporal drift, or
+real-data generalization.
+
+Contract 3.0 calls scikit-learn's non-interpolated metric
+`average_precision_attention`; it does not label it generic PR-AUC. A top-budget
+cutoff tie receives fractional expected allocation so input order cannot choose
+among equal scores. Budget ranking metrics are omitted from stress and conditional
+uncertainty summaries when every score ties because no model ranking exists.
 Demo output is written under `reports/generated/`
 and is ignored by Git.

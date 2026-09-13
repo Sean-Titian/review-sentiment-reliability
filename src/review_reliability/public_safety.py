@@ -31,6 +31,12 @@ _FORBIDDEN_KEYS = {
     "source_path",
     "predictions_by_row",
     "probabilities_by_row",
+    "cluster_ids",
+    "cluster_keys",
+    "resample_indices",
+    "sample_indices",
+    "row_indices",
+    "bootstrap_draws",
 }
 
 

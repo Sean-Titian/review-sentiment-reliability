@@ -13,6 +13,7 @@ from review_reliability.evaluation import (
     run_synthetic_benchmark,
 )
 from review_reliability.public_safety import assert_aggregate_report_safe
+from review_reliability.uncertainty import DEFAULT_BOOTSTRAP_DRAWS
 
 REPORT_FLOAT_DECIMALS = 10
 
@@ -73,6 +74,11 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=PERMUTATION_DRAWS_PER_SPLIT,
     )
+    parser.add_argument(
+        "--bootstrap-draws",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_DRAWS,
+    )
     parser.add_argument("--output", type=Path, default=None)
     return parser
 
@@ -89,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         config=config,
         seeds=seeds,
         permutation_draws=(1 if demo else args.permutation_draws),
+        bootstrap_draws=(min(40, args.bootstrap_draws) if demo else args.bootstrap_draws),
         enforce_negative_control=not demo,
     )
     output = args.output
