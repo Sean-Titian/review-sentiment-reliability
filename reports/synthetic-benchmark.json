@@ -5,6 +5,144 @@
     "reference_protocol": "fingerprint_group",
     "result": {
       "budget_metric_omission_rule": "fixed-budget metrics are omitted when all positive-weight scores tie",
+      "capacity_curve": {
+        "capacity_selected_post_hoc": false,
+        "capacity_selection_mode": "release_contract_pre_specified",
+        "interval_scope": "marginal percentile, not simultaneous",
+        "matches_release_capacity_contract": true,
+        "points": [
+          {
+            "budget_share": 0.05,
+            "conditional_intervals": {
+              "lift_at_budget": {
+                "estimate": 1.3462783172,
+                "lower": 0.5145794061,
+                "point_within_percentile_interval": true,
+                "upper": 2.1717415146,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              },
+              "precision_at_budget": {
+                "estimate": 0.3333333333,
+                "lower": 0.136215415,
+                "point_within_percentile_interval": true,
+                "upper": 0.5454545455,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              },
+              "recall_at_budget": {
+                "estimate": 0.067961165,
+                "lower": 0.0260813343,
+                "point_within_percentile_interval": true,
+                "upper": 0.1111111111,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              }
+            },
+            "point_estimates": {
+              "budget_count": 21,
+              "budget_cutoff_fraction_selected": 1.0,
+              "budget_cutoff_tied_rows": 1,
+              "budget_cutoff_tied_weight": 1.0,
+              "budget_weight": 21.0,
+              "effective_budget_share": 0.0504807692,
+              "lift_at_budget": 1.3462783172,
+              "precision_at_budget": 0.3333333333,
+              "recall_at_budget": 0.067961165,
+              "total_weight": 416.0
+            }
+          },
+          {
+            "budget_share": 0.1,
+            "conditional_intervals": {
+              "lift_at_budget": {
+                "estimate": 1.7309292649,
+                "lower": 0.9550438232,
+                "point_within_percentile_interval": true,
+                "upper": 2.2774564347,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              },
+              "precision_at_budget": {
+                "estimate": 0.4285714286,
+                "lower": 0.2272727273,
+                "point_within_percentile_interval": true,
+                "upper": 0.5681818182,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              },
+              "recall_at_budget": {
+                "estimate": 0.1747572816,
+                "lower": 0.0967630956,
+                "point_within_percentile_interval": true,
+                "upper": 0.2307692308,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              }
+            },
+            "point_estimates": {
+              "budget_count": 42,
+              "budget_cutoff_fraction_selected": 1.0,
+              "budget_cutoff_tied_rows": 1,
+              "budget_cutoff_tied_weight": 1.0,
+              "budget_weight": 42.0,
+              "effective_budget_share": 0.1009615385,
+              "lift_at_budget": 1.7309292649,
+              "precision_at_budget": 0.4285714286,
+              "recall_at_budget": 0.1747572816,
+              "total_weight": 416.0
+            }
+          },
+          {
+            "budget_share": 0.2,
+            "conditional_intervals": {
+              "lift_at_budget": {
+                "estimate": 1.8751733703,
+                "lower": 1.3658312345,
+                "point_within_percentile_interval": true,
+                "upper": 2.2962750332,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              },
+              "precision_at_budget": {
+                "estimate": 0.4642857143,
+                "lower": 0.3214285714,
+                "point_within_percentile_interval": true,
+                "upper": 0.5833333333,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              },
+              "recall_at_budget": {
+                "estimate": 0.3786407767,
+                "lower": 0.2747252747,
+                "point_within_percentile_interval": true,
+                "upper": 0.4623689516,
+                "valid_draw_share": 1.0,
+                "valid_draws": 2000
+              }
+            },
+            "point_estimates": {
+              "budget_count": 84,
+              "budget_cutoff_fraction_selected": 1.0,
+              "budget_cutoff_tied_rows": 1,
+              "budget_cutoff_tied_weight": 1.0,
+              "budget_weight": 84.0,
+              "effective_budget_share": 0.2019230769,
+              "lift_at_budget": 1.8751733703,
+              "precision_at_budget": 0.4642857143,
+              "recall_at_budget": 0.3786407767,
+              "total_weight": 416.0
+            }
+          }
+        ],
+        "pre_specified_budget_shares": [
+          0.05,
+          0.1,
+          0.2
+        ],
+        "primary_budget_share": 0.1,
+        "scope": "fixed fitted scoring rule, split manifest, and authored synthetic test fixture under the same one-way pairs cluster resamples"
+      },
       "cluster_unit": "near_text_fingerprint",
       "clusters": 302,
       "conditioning": "fixed fitted scoring rule, split manifest, and authored synthetic test fixture after partition-local 3-star exclusion",
@@ -98,12 +236,23 @@
       "ranking_at_budget_defined": true,
       "release_gate": {
         "all_points_within_intervals_diagnostic": true,
+        "capacity_curve_points_complete": true,
+        "capacity_shares_exact_default": true,
+        "cluster_unit_exact_default": true,
+        "confidence_level_exact_default": true,
         "criteria_met": true,
         "draw_count_passed": true,
         "enforced": true,
         "intervals_finite_and_ordered": true,
         "passed": true,
         "point_containment_is_not_a_validity_requirement": true,
+        "required_capacity_shares": [
+          0.05,
+          0.1,
+          0.2
+        ],
+        "required_cluster_unit": "near_text_fingerprint",
+        "required_confidence_level": 0.95,
         "structure_passed": true,
         "thresholds": {
           "maximum_largest_cluster_share": 0.2,
@@ -119,7 +268,7 @@
       "test_rows_after_partition_local_neutral_exclusion": 416
     }
   },
-  "contract_version": "3.0",
+  "contract_version": "4.0",
   "data_audit": {
     "attention_prevalence": 0.2529147982,
     "conflicting_proxy_fingerprint_groups": 123,
@@ -161,13 +310,21 @@
       "summary",
       "text"
     ],
+    "capacity_selected_post_hoc": false,
     "causal_claim": false,
-    "intended_decision": "hypothetically rank a fixed-capacity manual review queue",
+    "intended_decision": "hypothetically rank manual-review queues at pre-specified 5%, 10%, and 20% workload shares",
     "neutral_policy": "3-star rows are excluded inside each assigned partition",
     "operational_need_validated": false,
+    "pre_specified_queue_capacity_shares": [
+      0.05,
+      0.1,
+      0.2
+    ],
     "prediction_time": "when an unscored review summary and body are submitted",
+    "primary_queue_capacity_share": 0.1,
     "scope": "offline synthetic reliability audit, not a deployment claim",
     "source_rating_is_target_oracle": true,
+    "staffing_cost_or_value_modeled": false,
     "target": "rating-derived needs_attention proxy: 1-2 stars=1, 4-5 stars=0"
   },
   "evaluation_seeds": [
@@ -179,6 +336,8 @@
     "All scores come from authored synthetic text and demonstrate the evaluation system only.",
     "The target is a rating-derived proxy, not human-annotated sentiment or causal impact.",
     "No real-data generalization, fairness, moderation, or business value claim is supported.",
+    "The 5%, 10%, and 20% queue shares are pre-specified sensitivity scenarios, not validated staffing levels; no review cost, action value, or net benefit is modeled.",
+    "Negative-control bounds are heuristic fail-closed sanity checks, not multiplicity-adjusted inferential tests.",
     "Hash-group protocols approximate deployment risks but cannot reproduce every source shift.",
     "A corrected split-first source audit exists privately, but source rights, target validity, and public-safe aggregation still block any real-data metric release.",
     "Multi-seed min/max values describe protocol and optimizer sensitivity; they are not sampling confidence intervals.",
@@ -190,6 +349,8 @@
     "brier": "Mean squared probability error; lower is better.",
     "budget_ranking_tie_policy": "A cutoff score tie uses fractional expected allocation, independent of row order. Stress and conditional-uncertainty summaries omit recall and lift when all scores tie because no model ranking exists.",
     "conditional_cluster_bootstrap": "A 95% percentile interval for one frozen fingerprint-group scoring rule, using near-text-fingerprint pairs resampling; separate from multi-seed and rolling-origin sensitivity ranges.",
+    "negative_control_sanity_gates": "Pre-specified fail-closed heuristic bounds for five null draws per strict split and their aggregate means; not p-values, family-wise-error control, or a calibrated joint envelope.",
+    "queue_capacity_sensitivity": "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue capacities. Matched-seed ranges are descriptive; frozen-rule cluster bootstrap intervals are marginal, not simultaneous.",
     "roc_auc_supplementary": "Ranking metric reported only as a supplementary discrimination view.",
     "sensitivity_ranges": "Mean, sample standard deviation, minimum, and maximum across deterministic runs; not confidence intervals."
   },
@@ -7056,6 +7217,377 @@
       }
     }
   },
+  "queue_capacity_sensitivity": {
+    "capacity_selected_post_hoc": false,
+    "conditional_interval_path": "conditional_uncertainty.result.capacity_curve.points",
+    "interpretation": "Pre-specified workload scenarios on an authored synthetic fixture; not observed staffing capacity, a post-hoc optimum, or an estimate of business value.",
+    "matched_evaluation_seeds": [
+      1103,
+      2909,
+      4703
+    ],
+    "matches_release_capacity_contract": true,
+    "model_across_matched_seeds": {
+      "capacity_selected_post_hoc": false,
+      "interval_scope": "descriptive matched-seed variation, not a confidence interval",
+      "matches_release_capacity_contract": true,
+      "points": [
+        {
+          "budget_share": 0.05,
+          "descriptive_ranges": {
+            "budget_count": {
+              "max": 23.0,
+              "mean": 21.6666666667,
+              "min": 21.0,
+              "runs": 3,
+              "std": 1.1547005384
+            },
+            "budget_weight": {
+              "max": 23.0,
+              "mean": 21.6666666667,
+              "min": 21.0,
+              "runs": 3,
+              "std": 1.1547005384
+            },
+            "effective_budget_share": {
+              "max": 0.0520361991,
+              "mean": 0.051162614,
+              "min": 0.0504807692,
+              "runs": 3,
+              "std": 0.0007952445
+            },
+            "lift_at_budget": {
+              "max": 2.8911119661,
+              "mean": 2.2654654982,
+              "min": 1.3462783172,
+              "runs": 3,
+              "std": 0.8131742516
+            },
+            "precision_at_budget": {
+              "max": 0.7391304348,
+              "mean": 0.5479641132,
+              "min": 0.3333333333,
+              "runs": 3,
+              "std": 0.203913603
+            },
+            "recall_at_budget": {
+              "max": 0.1504424779,
+              "mean": 0.1162794752,
+              "min": 0.067961165,
+              "runs": 3,
+              "std": 0.043024078
+            },
+            "total_weight": {
+              "max": 442.0,
+              "mean": 423.3333333333,
+              "min": 412.0,
+              "runs": 3,
+              "std": 16.2890556305
+            }
+          }
+        },
+        {
+          "budget_share": 0.1,
+          "descriptive_ranges": {
+            "budget_count": {
+              "max": 45.0,
+              "mean": 43.0,
+              "min": 42.0,
+              "runs": 3,
+              "std": 1.7320508076
+            },
+            "budget_weight": {
+              "max": 45.0,
+              "mean": 43.0,
+              "min": 42.0,
+              "runs": 3,
+              "std": 1.7320508076
+            },
+            "effective_budget_share": {
+              "max": 0.1019417476,
+              "mean": 0.1015710803,
+              "min": 0.1009615385,
+              "runs": 3,
+              "std": 0.0005319758
+            },
+            "lift_at_budget": {
+              "max": 2.3469026549,
+              "mean": 2.1411958711,
+              "min": 1.7309292649,
+              "runs": 3,
+              "std": 0.3553017661
+            },
+            "precision_at_budget": {
+              "max": 0.6,
+              "mean": 0.5174603175,
+              "min": 0.4285714286,
+              "runs": 3,
+              "std": 0.0858904715
+            },
+            "recall_at_budget": {
+              "max": 0.2391304348,
+              "mean": 0.2176085898,
+              "min": 0.1747572816,
+              "runs": 3,
+              "std": 0.0371104462
+            },
+            "total_weight": {
+              "max": 442.0,
+              "mean": 423.3333333333,
+              "min": 412.0,
+              "runs": 3,
+              "std": 16.2890556305
+            }
+          }
+        },
+        {
+          "budget_share": 0.2,
+          "descriptive_ranges": {
+            "budget_count": {
+              "max": 89.0,
+              "mean": 85.3333333333,
+              "min": 83.0,
+              "runs": 3,
+              "std": 3.2145502537
+            },
+            "budget_weight": {
+              "max": 89.0,
+              "mean": 85.3333333333,
+              "min": 83.0,
+              "runs": 3,
+              "std": 3.2145502537
+            },
+            "effective_budget_share": {
+              "max": 0.2019230769,
+              "mean": 0.2015789512,
+              "min": 0.2013574661,
+              "runs": 3,
+              "std": 0.0003020918
+            },
+            "lift_at_budget": {
+              "max": 2.2121529597,
+              "mean": 2.0070345995,
+              "min": 1.8751733703,
+              "runs": 3,
+              "std": 0.1800382358
+            },
+            "precision_at_budget": {
+              "max": 0.4943820225,
+              "mean": 0.4842145468,
+              "min": 0.4642857143,
+              "runs": 3,
+              "std": 0.0172600697
+            },
+            "recall_at_budget": {
+              "max": 0.4456521739,
+              "mean": 0.4045578272,
+              "min": 0.3786407767,
+              "runs": 3,
+              "std": 0.0359915904
+            },
+            "total_weight": {
+              "max": 442.0,
+              "mean": 423.3333333333,
+              "min": 412.0,
+              "runs": 3,
+              "std": 16.2890556305
+            }
+          }
+        }
+      ],
+      "pre_specified_budget_shares": [
+        0.05,
+        0.1,
+        0.2
+      ],
+      "primary_budget_share": 0.1,
+      "runs": 3
+    },
+    "negative_control_gate_path": "runtime_controls.negative_control_gate.designs",
+    "pre_specified_budget_shares": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "primary_budget_share": 0.1,
+    "reference_protocol": "fingerprint_group",
+    "seeded_random_score_across_matched_seeds": {
+      "capacity_selected_post_hoc": false,
+      "interval_scope": "descriptive matched-seed variation, not a confidence interval",
+      "matches_release_capacity_contract": true,
+      "points": [
+        {
+          "budget_share": 0.05,
+          "descriptive_ranges": {
+            "budget_count": {
+              "max": 23.0,
+              "mean": 21.6666666667,
+              "min": 21.0,
+              "runs": 3,
+              "std": 1.1547005384
+            },
+            "budget_weight": {
+              "max": 23.0,
+              "mean": 21.6666666667,
+              "min": 21.0,
+              "runs": 3,
+              "std": 1.1547005384
+            },
+            "effective_budget_share": {
+              "max": 0.0520361991,
+              "mean": 0.051162614,
+              "min": 0.0504807692,
+              "runs": 3,
+              "std": 0.0007952445
+            },
+            "lift_at_budget": {
+              "max": 1.2795031056,
+              "mean": 0.539877975,
+              "min": 0.0,
+              "runs": 3,
+              "std": 0.6627263718
+            },
+            "precision_at_budget": {
+              "max": 0.2857142857,
+              "mean": 0.1242236025,
+              "min": 0.0,
+              "runs": 3,
+              "std": 0.1464574674
+            },
+            "recall_at_budget": {
+              "max": 0.0652173913,
+              "mean": 0.0276388354,
+              "min": 0.0,
+              "runs": 3,
+              "std": 0.0337257404
+            },
+            "total_weight": {
+              "max": 442.0,
+              "mean": 423.3333333333,
+              "min": 412.0,
+              "runs": 3,
+              "std": 16.2890556305
+            }
+          }
+        },
+        {
+          "budget_share": 0.1,
+          "descriptive_ranges": {
+            "budget_count": {
+              "max": 45.0,
+              "mean": 43.0,
+              "min": 42.0,
+              "runs": 3,
+              "std": 1.7320508076
+            },
+            "budget_weight": {
+              "max": 45.0,
+              "mean": 43.0,
+              "min": 42.0,
+              "runs": 3,
+              "std": 1.7320508076
+            },
+            "effective_budget_share": {
+              "max": 0.1019417476,
+              "mean": 0.1015710803,
+              "min": 0.1009615385,
+              "runs": 3,
+              "std": 0.0005319758
+            },
+            "lift_at_budget": {
+              "max": 0.8530020704,
+              "mean": 0.6763981065,
+              "min": 0.4808136847,
+              "runs": 3,
+              "std": 0.1868187409
+            },
+            "precision_at_budget": {
+              "max": 0.1904761905,
+              "mean": 0.1624338624,
+              "min": 0.119047619,
+              "runs": 3,
+              "std": 0.0381062594
+            },
+            "recall_at_budget": {
+              "max": 0.0869565217,
+              "mean": 0.0687655571,
+              "min": 0.0485436893,
+              "runs": 3,
+              "std": 0.0192867791
+            },
+            "total_weight": {
+              "max": 442.0,
+              "mean": 423.3333333333,
+              "min": 412.0,
+              "runs": 3,
+              "std": 16.2890556305
+            }
+          }
+        },
+        {
+          "budget_share": 0.2,
+          "descriptive_ranges": {
+            "budget_count": {
+              "max": 89.0,
+              "mean": 85.3333333333,
+              "min": 83.0,
+              "runs": 3,
+              "std": 3.2145502537
+            },
+            "budget_weight": {
+              "max": 89.0,
+              "mean": 85.3333333333,
+              "min": 83.0,
+              "runs": 3,
+              "std": 3.2145502537
+            },
+            "effective_budget_share": {
+              "max": 0.2019230769,
+              "mean": 0.2015789512,
+              "min": 0.2013574661,
+              "runs": 3,
+              "std": 0.0003020918
+            },
+            "lift_at_budget": {
+              "max": 0.8632792038,
+              "mean": 0.7479140165,
+              "min": 0.6592423188,
+              "runs": 3,
+              "std": 0.1046048249
+            },
+            "precision_at_budget": {
+              "max": 0.1927710843,
+              "mean": 0.1799606129,
+              "min": 0.1685393258,
+              "runs": 3,
+              "std": 0.0121754632
+            },
+            "recall_at_budget": {
+              "max": 0.1739130435,
+              "mean": 0.1507624914,
+              "min": 0.1327433628,
+              "runs": 3,
+              "std": 0.0210590665
+            },
+            "total_weight": {
+              "max": 442.0,
+              "mean": 423.3333333333,
+              "min": 412.0,
+              "runs": 3,
+              "std": 16.2890556305
+            }
+          }
+        }
+      ],
+      "pre_specified_budget_shares": [
+        0.05,
+        0.1,
+        0.2
+      ],
+      "primary_budget_share": 0.1,
+      "runs": 3
+    }
+  },
   "rolling_origin_backtest": {
     "design": {
       "boundary_basis": "label-free row shares snapped to whole timestamps",
@@ -7843,14 +8375,26 @@
     ]
   },
   "runtime_controls": {
+    "capacity_null_gate_scope": "heuristic train-label permutation and test-label alignment placebo lift sanity bounds at each pre-specified 5%, 10%, and 20% capacity",
     "conditional_uncertainty_release_gate": {
       "all_points_within_intervals_diagnostic": true,
+      "capacity_curve_points_complete": true,
+      "capacity_shares_exact_default": true,
+      "cluster_unit_exact_default": true,
+      "confidence_level_exact_default": true,
       "criteria_met": true,
       "draw_count_passed": true,
       "enforced": true,
       "intervals_finite_and_ordered": true,
       "passed": true,
       "point_containment_is_not_a_validity_requirement": true,
+      "required_capacity_shares": [
+        0.05,
+        0.1,
+        0.2
+      ],
+      "required_cluster_unit": "near_text_fingerprint",
+      "required_confidence_level": 0.95,
       "structure_passed": true,
       "thresholds": {
         "maximum_largest_cluster_share": 0.2,
@@ -7864,7 +8408,7 @@
     },
     "conflict_reference_target_use": "audit-only after label-free split construction; never used for assignment",
     "conflict_retention_fail_closed": true,
-    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 3.0 reports emit only average_precision_attention",
+    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 4.0 reports emit only average_precision_attention",
     "negative_control_gate": {
       "designs": {
         "test_label_alignment_placebo": {
@@ -7874,6 +8418,49 @@
             "min": 0.9031629669,
             "runs": 15,
             "std": 0.0918775105
+          },
+          "capacity_lift": {
+            "capacity_selected_post_hoc": false,
+            "draws": 15,
+            "matches_release_capacity_contract": true,
+            "points": [
+              {
+                "budget_share": 0.05,
+                "lift_at_budget": {
+                  "max": 1.8707195075,
+                  "mean": 0.893364169,
+                  "min": 0.3846509478,
+                  "runs": 15,
+                  "std": 0.3886071784
+                }
+              },
+              {
+                "budget_share": 0.1,
+                "lift_at_budget": {
+                  "max": 1.6515240905,
+                  "mean": 0.963708475,
+                  "min": 0.5769764216,
+                  "runs": 15,
+                  "std": 0.3101427534
+                }
+              },
+              {
+                "budget_share": 0.2,
+                "lift_at_budget": {
+                  "max": 1.2525604057,
+                  "mean": 0.957693233,
+                  "min": 0.6731391586,
+                  "runs": 15,
+                  "std": 0.1626647229
+                }
+              }
+            ],
+            "pre_specified_budget_shares": [
+              0.05,
+              0.1,
+              0.2
+            ],
+            "primary_budget_share": 0.1
           },
           "draws": 15,
           "lift_at_10pct_budget": {
@@ -7899,6 +8486,49 @@
             "runs": 15,
             "std": 0.173281862
           },
+          "capacity_lift": {
+            "capacity_selected_post_hoc": false,
+            "draws": 15,
+            "matches_release_capacity_contract": true,
+            "points": [
+              {
+                "budget_share": 0.05,
+                "lift_at_budget": {
+                  "max": 2.132505176,
+                  "mean": 1.262048514,
+                  "min": 0.3205424565,
+                  "runs": 15,
+                  "std": 0.5454692103
+                }
+              },
+              {
+                "budget_share": 0.1,
+                "lift_at_budget": {
+                  "max": 1.7060041408,
+                  "mean": 1.1268663016,
+                  "min": 0.6731391586,
+                  "runs": 15,
+                  "std": 0.3613099
+                }
+              },
+              {
+                "budget_share": 0.2,
+                "lift_at_budget": {
+                  "max": 1.538603791,
+                  "mean": 1.076385477,
+                  "min": 0.8093242535,
+                  "runs": 15,
+                  "std": 0.2401406232
+                }
+              }
+            ],
+            "pre_specified_budget_shares": [
+              0.05,
+              0.1,
+              0.2
+            ],
+            "primary_budget_share": 0.1
+          },
           "draws": 15,
           "lift_at_10pct_budget": {
             "max": 1.7060041408,
@@ -7916,7 +8546,11 @@
           }
         }
       },
+      "enforced": true,
+      "gate_interpretation": "pre-specified fail-closed heuristic sanity bounds; not p-values, a multiplicity-adjusted hypothesis test, or a calibrated joint envelope",
+      "multiplicity_controlled": false,
       "passed": true,
+      "permutation_draws_per_split_fixed": 5,
       "thresholds": {
         "aggregate_mean": {
           "average_precision_over_prevalence": [
@@ -7932,6 +8566,41 @@
             0.55
           ]
         },
+        "capacity_lift": [
+          {
+            "aggregate_mean": [
+              0.55,
+              1.5
+            ],
+            "budget_share": 0.05,
+            "per_draw": [
+              0.0,
+              3.0
+            ]
+          },
+          {
+            "aggregate_mean": [
+              0.75,
+              1.35
+            ],
+            "budget_share": 0.1,
+            "per_draw": [
+              0.25,
+              2.0
+            ]
+          },
+          {
+            "aggregate_mean": [
+              0.8,
+              1.25
+            ],
+            "budget_share": 0.2,
+            "per_draw": [
+              0.4,
+              1.7
+            ]
+          }
+        ],
         "per_draw": {
           "average_precision_over_prevalence": [
             0.5,

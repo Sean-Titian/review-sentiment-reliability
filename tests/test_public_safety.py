@@ -125,7 +125,7 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     report_path = ROOT / "reports" / "synthetic-benchmark.json"
     assert report_path.exists()
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["contract_version"] == "3.0"
+    assert report["contract_version"] == "4.0"
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
     assert report["source_trained_artifacts_included"] is False
@@ -133,10 +133,36 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
         "multi_draw_train_and_test_label_placebos_fail_closed"
     )
     assert report["runtime_controls"]["negative_control_gate"]["passed"] is True
+    assert report["runtime_controls"]["negative_control_gate"]["enforced"] is True
+    assert report["runtime_controls"]["negative_control_gate"][
+        "multiplicity_controlled"
+    ] is False
+    assert report["runtime_controls"]["negative_control_gate"][
+        "permutation_draws_per_split_fixed"
+    ] == 5
     assert report["runtime_controls"]["permutation_draws_per_fingerprint_split"] == 5
+    capacity = report["queue_capacity_sensitivity"]
+    assert capacity["pre_specified_budget_shares"] == [0.05, 0.10, 0.20]
+    assert capacity["matches_release_capacity_contract"] is True
+    assert capacity["capacity_selected_post_hoc"] is False
+    capacity_null_scope = report["runtime_controls"]["capacity_null_gate_scope"]
+    assert capacity_null_scope.startswith("heuristic train-label permutation")
+    assert all(share in capacity_null_scope for share in ("5%", "10%", "20%"))
     bootstrap_gate = report["conditional_uncertainty"]["result"]["release_gate"]
     assert bootstrap_gate["enforced"] is True
     assert bootstrap_gate["passed"] is True
+    assert bootstrap_gate["capacity_shares_exact_default"] is True
+    assert bootstrap_gate["capacity_curve_points_complete"] is True
+    assert bootstrap_gate["confidence_level_exact_default"] is True
+    assert bootstrap_gate["cluster_unit_exact_default"] is True
+    capacity_points = report["conditional_uncertainty"]["result"]["capacity_curve"][
+        "points"
+    ]
+    assert [point["budget_share"] for point in capacity_points] == [0.05, 0.10, 0.20]
+    assert all(
+        point["conditional_intervals"]["lift_at_budget"]["valid_draws"] == 2_000
+        for point in capacity_points
+    )
     assert report["rolling_origin_backtest"]["summary"][
         "all_test_horizons_non_overlapping"
     ] is True

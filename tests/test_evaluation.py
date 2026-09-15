@@ -34,12 +34,25 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
     assert strict["negative_control_train_label_permutation"] is not None
     assert strict["placebo_test_label_alignment"] is not None
     assert strict["conflict_retention_gate"]["all_runs_passed"] is True
-    assert report["contract_version"] == "3.0"
+    assert report["contract_version"] == "4.0"
     assert report["runtime_controls"]["protocol_isolation_fail_closed"] is True
     assert report["decision_contract"]["causal_claim"] is False
     assert report["runtime_controls"]["target_bearing_split_columns"] == []
     assert report["conditional_uncertainty"]["reference_protocol"] == "fingerprint_group"
     assert report["conditional_uncertainty"]["result"]["draws_attempted"] == 40
+    capacity = report["queue_capacity_sensitivity"]
+    assert capacity["pre_specified_budget_shares"] == [0.05, 0.10, 0.20]
+    assert capacity["capacity_selected_post_hoc"] is False
+    assert [
+        point["budget_share"]
+        for point in capacity["model_across_matched_seeds"]["points"]
+    ] == [0.05, 0.10, 0.20]
+    diagnostic_gate = report["runtime_controls"]["negative_control_gate"]
+    assert diagnostic_gate["enforced"] is False
+    for design in diagnostic_gate["designs"].values():
+        assert [
+            point["budget_share"] for point in design["capacity_lift"]["points"]
+        ] == [0.05, 0.10, 0.20]
     assert report["rolling_origin_backtest"]["summary"]["windows"] == 4
     assert_aggregate_report_safe(report)
 
@@ -87,43 +100,95 @@ def np_is_finite(value: float) -> bool:
     return value == value and value not in {float("inf"), float("-inf")}
 
 
-def test_negative_control_is_checked_per_run_and_fails_closed() -> None:
-    passing_control = {
+def _capacity_curve_for_lifts(lifts: tuple[float, float, float]) -> dict[str, object]:
+    return {
+        "budget_shares": [0.05, 0.10, 0.20],
+        "points": [
+            {
+                "budget_share": share,
+                "budget_count": count,
+                "budget_weight": float(count),
+                "total_weight": 100.0,
+                "effective_budget_share": share,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "budget_cutoff_fraction_selected": 1.0,
+                "precision_at_budget": 0.2 * lift,
+                "recall_at_budget": share * lift,
+                "lift_at_budget": lift,
+            }
+            for share, count, lift in zip(
+                (0.05, 0.10, 0.20), (5, 10, 20), lifts, strict=True
+            )
+        ],
+    }
+
+
+def _null_control(
+    *, roc_auc: float = 0.50, lift_at_budget: float = 1.0
+) -> dict[str, float | int]:
+    return {
         "attention_prevalence": 0.2,
         "average_precision_attention": 0.2,
-        "roc_auc_supplementary": 0.50,
-        "lift_at_budget": 1.0,
+        "roc_auc_supplementary": roc_auc,
+        "budget_count": 10,
+        "budget_cutoff_tied_rows": 1,
+        "budget_cutoff_tied_weight": 1.0,
+        "budget_cutoff_fraction_selected": 1.0,
+        "precision_at_budget": 0.2 * lift_at_budget,
+        "recall_at_budget": 0.1 * lift_at_budget,
+        "lift_at_budget": lift_at_budget,
     }
+
+
+def test_negative_control_is_checked_per_run_and_fails_closed() -> None:
+    passing_control = _null_control()
     passing_run = {
         "train_label_permutation_controls": [passing_control] * 5,
         "test_label_alignment_placebos": [passing_control] * 5,
+        "train_label_permutation_capacity_controls": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ]
+        * 5,
+        "test_label_alignment_capacity_placebos": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ]
+        * 5,
     }
     summary = _enforce_negative_control_runs([passing_run])
     assert summary["passed"] is True
     assert summary["designs"]["train_label_permutation"]["draws"] == 5
 
-    failing_control = {
-        **passing_control,
-        "roc_auc_supplementary": 0.71,
-    }
+    failing_control = _null_control(roc_auc=0.71)
     failing_run = {
         "train_label_permutation_controls": [passing_control, failing_control],
         "test_label_alignment_placebos": [passing_control] * 2,
+        "train_label_permutation_capacity_controls": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ]
+        * 2,
+        "test_label_alignment_capacity_placebos": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ]
+        * 2,
     }
     with pytest.raises(RuntimeError, match="draw 1"):
         _enforce_negative_control_runs([failing_run])
 
 
 def test_negative_control_aggregate_mean_is_fail_closed() -> None:
-    shifted = {
-        "attention_prevalence": 0.2,
-        "average_precision_attention": 0.2,
-        "roc_auc_supplementary": 0.56,
-        "lift_at_budget": 1.0,
-    }
+    shifted = _null_control(roc_auc=0.56)
     run = {
         "train_label_permutation_controls": [shifted] * 5,
         "test_label_alignment_placebos": [shifted] * 5,
+        "train_label_permutation_capacity_controls": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ]
+        * 5,
+        "test_label_alignment_capacity_placebos": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ]
+        * 5,
     }
     with pytest.raises(RuntimeError, match="aggregate roc_auc"):
         _enforce_negative_control_runs([run])
@@ -133,15 +198,108 @@ def test_negative_control_requires_draws() -> None:
     run = {
         "train_label_permutation_controls": [],
         "test_label_alignment_placebos": [],
+        "train_label_permutation_capacity_controls": [],
+        "test_label_alignment_capacity_placebos": [],
     }
     with pytest.raises(RuntimeError, match="requires negative-control draws"):
         _enforce_negative_control_runs([run])
 
 
-def test_release_gate_requires_five_permutations_per_strict_split() -> None:
-    with pytest.raises(ValueError, match="at least five permutation draws"):
+@pytest.mark.parametrize(
+    ("failing_lifts", "capacity_label"),
+    (
+        ((3.01, 1.0, 1.0), "5%"),
+        ((1.0, 1.0, 1.71), "20%"),
+        ((1.0, 1.0, 0.39), "20%"),
+    ),
+)
+def test_capacity_negative_control_is_checked_at_each_pre_specified_share(
+    failing_lifts: tuple[float, float, float], capacity_label: str
+) -> None:
+    passing_control = _null_control()
+    run = {
+        "train_label_permutation_controls": [passing_control],
+        "test_label_alignment_placebos": [passing_control],
+        "train_label_permutation_capacity_controls": [
+            _capacity_curve_for_lifts(failing_lifts)
+        ],
+        "test_label_alignment_capacity_placebos": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ],
+    }
+    with pytest.raises(RuntimeError, match=f"capacity {capacity_label}"):
+        _enforce_negative_control_runs([run])
+
+
+def test_primary_capacity_null_point_must_match_legacy_10pct_metric() -> None:
+    passing_control = _null_control()
+    mismatched_curve = _capacity_curve_for_lifts((1.0, 1.01, 1.0))
+    run = {
+        "train_label_permutation_controls": [passing_control],
+        "test_label_alignment_placebos": [passing_control],
+        "train_label_permutation_capacity_controls": [mismatched_curve],
+        "test_label_alignment_capacity_placebos": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ],
+    }
+    with pytest.raises(RuntimeError, match="does not match legacy"):
+        _enforce_negative_control_runs([run])
+
+
+@pytest.mark.parametrize("lift", (0.24, 2.01))
+def test_legacy_10pct_null_lift_bounds_remain_fail_closed(lift: float) -> None:
+    failing_control = _null_control(lift_at_budget=lift)
+    failing_curve = _capacity_curve_for_lifts((1.0, lift, 1.0))
+    run = {
+        "train_label_permutation_controls": [failing_control],
+        "test_label_alignment_placebos": [_null_control()],
+        "train_label_permutation_capacity_controls": [failing_curve],
+        "test_label_alignment_capacity_placebos": [
+            _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+        ],
+    }
+    with pytest.raises(RuntimeError, match="draw 0"):
+        _enforce_negative_control_runs([run])
+
+
+def test_capacity_negative_control_aggregate_mean_fails_closed() -> None:
+    passing_control = _null_control()
+    shifted_curve = _capacity_curve_for_lifts((1.51, 1.0, 1.0))
+    passing_curve = _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+    run = {
+        "train_label_permutation_controls": [passing_control] * 5,
+        "test_label_alignment_placebos": [passing_control] * 5,
+        "train_label_permutation_capacity_controls": [shifted_curve] * 5,
+        "test_label_alignment_capacity_placebos": [passing_curve] * 5,
+    }
+    with pytest.raises(RuntimeError, match="aggregate lift at 5% capacity"):
+        _enforce_negative_control_runs([run])
+
+
+def test_capacity_null_threshold_report_cannot_mutate_module_contract() -> None:
+    passing_control = _null_control()
+    passing_curve = _capacity_curve_for_lifts((1.0, 1.0, 1.0))
+    run = {
+        "train_label_permutation_controls": [passing_control] * 5,
+        "test_label_alignment_placebos": [passing_control] * 5,
+        "train_label_permutation_capacity_controls": [passing_curve] * 5,
+        "test_label_alignment_capacity_placebos": [passing_curve] * 5,
+    }
+
+    first = _enforce_negative_control_runs([run])
+    first["thresholds"]["capacity_lift"][0]["per_draw"][1] = -1.0
+    second = _enforce_negative_control_runs([run])
+
+    assert second["thresholds"]["capacity_lift"][0]["per_draw"] == [0.0, 3.0]
+
+
+@pytest.mark.parametrize("draws", (4, 6))
+def test_release_gate_requires_exactly_five_permutations_per_strict_split(
+    draws: int,
+) -> None:
+    with pytest.raises(ValueError, match="exactly five permutation draws"):
         run_synthetic_benchmark(
-            permutation_draws=4,
+            permutation_draws=draws,
             enforce_negative_control=True,
         )
 

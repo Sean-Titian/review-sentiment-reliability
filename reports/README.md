@@ -10,8 +10,9 @@ python -m review_reliability benchmark
 The CLI validates the report before writing it. The artifact contains contract
 metadata, counts, proportions, average precision and calibration metrics,
 descriptive multi-seed ranges, fail-closed overlap gates, two permutation-null
-designs, four rolling-origin windows, temporal label placebos, one conditional
-near-fingerprint cluster-bootstrap interval set, and stress diagnostics. It
+designs, four rolling-origin windows, temporal label placebos, pre-specified
+5%/10%/20% queue-capacity curves, one joint conditional near-fingerprint
+cluster-bootstrap interval set, and stress diagnostics. It
 contains no row, review text, identifier, cluster key, resample index, local path,
 source-trained model, or restricted source data.
 To prevent immaterial solver/BLAS tails from changing the tracked artifact,
@@ -20,15 +21,20 @@ serialized floating-point values are canonicalized to 10 decimal places.
 The numbers demonstrate that the reliability harness runs on an authored
 synthetic fixture; they are not estimates of real review performance. Multi-seed
 and rolling-origin ranges are descriptive, not confidence intervals. Contract
-3.0 separately labels its frozen strict-split percentile intervals as conditional
-on one fitted model, manifest, and synthetic test fixture. They do not cover
+4.0 separately labels its frozen strict-split percentile intervals as conditional
+on one fitted model, manifest, and synthetic test fixture. The three capacity
+intervals use the same 2,000 resamples and are marginal, not a simultaneous band;
+matched-seed ranges remain descriptive. They do not cover
 retraining, crossed user/product dependence, source selection, temporal drift, or
 real-data generalization.
 
-Contract 3.0 calls scikit-learn's non-interpolated metric
+Contract 4.0 calls scikit-learn's non-interpolated metric
 `average_precision_attention`; it does not label it generic PR-AUC. A top-budget
 cutoff tie receives fractional expected allocation so input order cannot choose
-among equal scores. Budget ranking metrics are omitted from stress and conditional
-uncertainty summaries when every score ties because no model ranking exists.
+among equal scores. The 5%, 10%, and 20% workloads are pre-specified scenarios,
+not staffing recommendations. Their null lifts must pass pre-specified fail-closed
+heuristic sanity bounds, which are not p-values or multiplicity-adjusted inference.
+Budget ranking metrics are omitted from stress and conditional uncertainty summaries
+when every score ties because no model ranking exists.
 Demo output is written under `reports/generated/`
 and is ignored by Git.

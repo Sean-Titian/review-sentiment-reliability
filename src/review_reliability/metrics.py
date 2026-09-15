@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable
+from itertools import pairwise
 
 import numpy as np
 from sklearn.metrics import (
@@ -17,6 +18,35 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+
+PRIMARY_CAPACITY_SHARE = 0.10
+DEFAULT_CAPACITY_SHARES = (0.05, PRIMARY_CAPACITY_SHARE, 0.20)
+
+
+def _validated_budget_share(value: object, *, name: str) -> float:
+    if isinstance(value, bool | np.bool_) or not isinstance(
+        value, int | float | np.integer | np.floating
+    ):
+        raise ValueError(f"{name} must contain real numbers")
+    share = float(value)
+    if not math.isfinite(share):
+        raise ValueError(f"{name} must contain finite values")
+    if not 0.0 < share <= 1.0:
+        raise ValueError(f"{name} must lie in (0, 1]")
+    return share
+
+
+def _validated_capacity_shares(budget_shares: Iterable[float]) -> tuple[float, ...]:
+    shares = tuple(
+        _validated_budget_share(value, name="budget_shares") for value in budget_shares
+    )
+    if not shares:
+        raise ValueError("budget_shares must be non-empty")
+    if len(set(shares)) != len(shares):
+        raise ValueError("budget_shares must not contain duplicates")
+    if any(left >= right for left, right in pairwise(shares)):
+        raise ValueError("budget_shares must be strictly increasing")
+    return shares
 
 
 def _as_valid_arrays(
@@ -40,6 +70,22 @@ def _as_valid_arrays(
     if not np.isfinite(probability).all() or ((probability < 0) | (probability > 1)).any():
         raise ValueError("scores must be finite probabilities in [0, 1]")
     return y_true, probability
+
+
+def _frequency_weights(
+    row_count: int,
+    sample_weight: Iterable[float] | None,
+) -> np.ndarray:
+    if sample_weight is None:
+        return np.ones(row_count, dtype=float)
+    weights = np.asarray(list(sample_weight), dtype=float)
+    if weights.ndim != 1 or len(weights) != row_count:
+        raise ValueError("sample_weight must match the one-dimensional target")
+    if not np.isfinite(weights).all() or (weights < 0).any() or weights.sum() <= 0:
+        raise ValueError("sample_weight must be finite, non-negative, and have positive mass")
+    if not np.allclose(weights, np.round(weights), rtol=0.0, atol=1e-12):
+        raise ValueError("sample_weight must contain integer frequency weights")
+    return np.round(weights)
 
 
 def expected_calibration_error(
@@ -72,20 +118,9 @@ def budget_metrics(
     instead of letting row order decide which equal-score reviews fit the budget.
     """
 
-    if not 0.0 < budget_share <= 1.0:
-        raise ValueError("budget_share must lie in (0, 1]")
+    budget_share = _validated_budget_share(budget_share, name="budget_share")
     y_true, probability = _as_valid_arrays(target, scores)
-    if sample_weight is None:
-        weights = np.ones(len(y_true), dtype=float)
-    else:
-        weights = np.asarray(list(sample_weight), dtype=float)
-        if weights.ndim != 1 or len(weights) != len(y_true):
-            raise ValueError("sample_weight must match the one-dimensional target")
-        if not np.isfinite(weights).all() or (weights < 0).any() or weights.sum() <= 0:
-            raise ValueError("sample_weight must be finite, non-negative, and have positive mass")
-        if not np.allclose(weights, np.round(weights), rtol=0.0, atol=1e-12):
-            raise ValueError("sample_weight must contain integer frequency weights")
-        weights = np.round(weights)
+    weights = _frequency_weights(len(y_true), sample_weight)
 
     total_weight = float(weights.sum())
     budget_count = max(1, int(math.ceil(total_weight * budget_share)))
@@ -122,6 +157,73 @@ def budget_metrics(
         "precision_at_budget": precision,
         "recall_at_budget": recall,
         "lift_at_budget": lift,
+    }
+
+
+def capacity_curve_metrics(
+    target: Iterable[int],
+    scores: Iterable[float],
+    budget_shares: Iterable[float] = DEFAULT_CAPACITY_SHARES,
+    *,
+    sample_weight: Iterable[float] | None = None,
+) -> dict[str, object]:
+    """Evaluate a pre-specified, strictly increasing set of queue capacities.
+
+    Points reuse :func:`budget_metrics`, including its fractional cutoff-tie
+    policy. Inputs are materialized once so generators behave like sequences
+    across every requested capacity.
+    """
+
+    shares = _validated_capacity_shares(budget_shares)
+    target_values = list(target)
+    score_values = list(scores)
+    weight_values = list(sample_weight) if sample_weight is not None else None
+    y_true, _ = _as_valid_arrays(target_values, score_values)
+    total_weight = float(_frequency_weights(len(y_true), weight_values).sum())
+    points = []
+    for share in shares:
+        point = budget_metrics(
+            target_values,
+            score_values,
+            budget_share=share,
+            sample_weight=weight_values,
+        )
+        budget_weight = min(float(point["budget_count"]), total_weight)
+        point.update(
+            {
+                "budget_weight": budget_weight,
+                "total_weight": total_weight,
+                "effective_budget_share": float(budget_weight / total_weight),
+            }
+        )
+        points.append(point)
+    budget_counts_nondecreasing = all(
+        int(left["budget_count"]) <= int(right["budget_count"])
+        for left, right in pairwise(points)
+    )
+    budget_weights_nondecreasing = all(
+        float(left["budget_weight"]) <= float(right["budget_weight"])
+        for left, right in pairwise(points)
+    )
+    recall_nondecreasing = all(
+        float(left["recall_at_budget"])
+        <= float(right["recall_at_budget"]) + 1e-12
+        for left, right in pairwise(points)
+    )
+    if not (
+        budget_counts_nondecreasing
+        and budget_weights_nondecreasing
+        and recall_nondecreasing
+    ):
+        raise RuntimeError("Capacity curve failed monotonicity checks")
+    return {
+        "budget_shares": list(shares),
+        "points": points,
+        "monotonicity_checks": {
+            "budget_count_nondecreasing": budget_counts_nondecreasing,
+            "budget_weight_nondecreasing": budget_weights_nondecreasing,
+            "recall_at_budget_nondecreasing": recall_nondecreasing,
+        },
     }
 
 

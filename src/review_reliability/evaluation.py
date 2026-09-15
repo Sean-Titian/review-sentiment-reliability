@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import platform
 from collections.abc import Iterable
 from dataclasses import asdict
@@ -20,7 +21,10 @@ from review_reliability.data import (
     make_split_keys,
 )
 from review_reliability.metrics import (
+    DEFAULT_CAPACITY_SHARES,
+    PRIMARY_CAPACITY_SHARE,
     aggregate_scalar_runs,
+    capacity_curve_metrics,
     classification_metrics,
     select_validation_threshold,
 )
@@ -90,6 +94,41 @@ STRESS_METRICS = (
     "lift_at_budget",
 )
 PERMUTATION_DRAWS_PER_SPLIT = 5
+CAPACITY_REPORT_METRICS = (
+    "budget_count",
+    "budget_weight",
+    "total_weight",
+    "effective_budget_share",
+    "precision_at_budget",
+    "recall_at_budget",
+    "lift_at_budget",
+)
+PRIMARY_CAPACITY_ALIAS_METRICS = (
+    "budget_count",
+    "budget_cutoff_tied_rows",
+    "budget_cutoff_tied_weight",
+    "budget_cutoff_fraction_selected",
+    "precision_at_budget",
+    "recall_at_budget",
+    "lift_at_budget",
+)
+CAPACITY_NULL_THRESHOLDS = (
+    {
+        "budget_share": 0.05,
+        "per_draw": (0.00, 3.00),
+        "aggregate_mean": (0.55, 1.50),
+    },
+    {
+        "budget_share": 0.10,
+        "per_draw": (0.25, 2.00),
+        "aggregate_mean": (0.75, 1.35),
+    },
+    {
+        "budget_share": 0.20,
+        "per_draw": (0.40, 1.70),
+        "aggregate_mean": (0.80, 1.25),
+    },
+)
 
 
 def _partition_labeled(attached: pd.DataFrame, partition: str) -> pd.DataFrame:
@@ -102,6 +141,66 @@ def _partition_labeled(attached: pd.DataFrame, partition: str) -> pd.DataFrame:
 
 def _metric_subset(metrics: dict[str, float | int], keys: Iterable[str]) -> dict[str, float | int]:
     return {key: metrics[key] for key in keys}
+
+
+def _capacity_points_by_share(curve: dict[str, object]) -> dict[float, dict[str, float | int]]:
+    shares = curve.get("budget_shares")
+    if shares != list(DEFAULT_CAPACITY_SHARES):
+        raise RuntimeError("Capacity curve must use the pre-specified release capacities")
+    points = curve.get("points")
+    if not isinstance(points, list) or len(points) != len(DEFAULT_CAPACITY_SHARES):
+        raise RuntimeError("Capacity curve is missing pre-specified points")
+    output: dict[float, dict[str, float | int]] = {}
+    for expected_share, point in zip(DEFAULT_CAPACITY_SHARES, points, strict=True):
+        if not isinstance(point, dict):
+            raise RuntimeError("Capacity point must be an aggregate mapping")
+        observed_share = float(point.get("budget_share", float("nan")))
+        if not np.isclose(observed_share, expected_share, rtol=0.0, atol=1e-12):
+            raise RuntimeError("Capacity points must remain in pre-specified order")
+        if any(metric not in point for metric in CAPACITY_REPORT_METRICS):
+            raise RuntimeError("Capacity point is missing a required aggregate metric")
+        output[expected_share] = point
+    return output
+
+
+def _assert_primary_capacity_alias(
+    curve: dict[str, object], metrics: dict[str, float | int]
+) -> None:
+    primary = _capacity_points_by_share(curve)[PRIMARY_CAPACITY_SHARE]
+    for metric in PRIMARY_CAPACITY_ALIAS_METRICS:
+        if not math.isclose(
+            float(primary[metric]),
+            float(metrics[metric]),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            raise RuntimeError(f"Primary capacity point does not match legacy {metric}")
+
+
+def _aggregate_capacity_curves(curves: list[dict[str, object]]) -> dict[str, object]:
+    if not curves:
+        raise RuntimeError("Capacity sensitivity requires at least one curve")
+    point_maps = [_capacity_points_by_share(curve) for curve in curves]
+    return {
+        "pre_specified_budget_shares": list(DEFAULT_CAPACITY_SHARES),
+        "primary_budget_share": PRIMARY_CAPACITY_SHARE,
+        "matches_release_capacity_contract": True,
+        "capacity_selected_post_hoc": False,
+        "runs": len(curves),
+        "points": [
+            {
+                "budget_share": share,
+                "descriptive_ranges": {
+                    metric: aggregate_scalar_runs(
+                        [float(point_map[share][metric]) for point_map in point_maps]
+                    )
+                    for metric in CAPACITY_REPORT_METRICS
+                },
+            }
+            for share in DEFAULT_CAPACITY_SHARES
+        ],
+        "interval_scope": "descriptive matched-seed variation, not a confidence interval",
+    }
 
 
 def _stress_metric_summary(
@@ -253,6 +352,8 @@ def _run_protocol_once(
     model_metrics = classification_metrics(
         test[TARGET_COLUMN], test_scores, threshold=threshold, budget_share=0.10
     )
+    model_capacity_curve = capacity_curve_metrics(test[TARGET_COLUMN], test_scores)
+    _assert_primary_capacity_alias(model_capacity_curve, model_metrics)
 
     train_prevalence = float(train[TARGET_COLUMN].mean())
     prior_test = np.full(len(test), train_prevalence)
@@ -268,6 +369,8 @@ def _run_protocol_once(
     random_metrics = classification_metrics(
         test[TARGET_COLUMN], random_test, threshold=random_threshold, budget_share=0.10
     )
+    random_capacity_curve = capacity_curve_metrics(test[TARGET_COLUMN], random_test)
+    _assert_primary_capacity_alias(random_capacity_curve, random_metrics)
 
     conditional_uncertainty = None
     if bootstrap_draws:
@@ -296,6 +399,8 @@ def _run_protocol_once(
 
     train_label_controls: list[dict[str, float | int]] = []
     test_alignment_placebos: list[dict[str, float | int]] = []
+    train_label_capacity_controls: list[dict[str, object]] = []
+    test_alignment_capacity_placebos: list[dict[str, object]] = []
     for draw in range(permutation_draws):
         permutation_rng = np.random.default_rng(seed + 30_011 + draw * 104_729)
         shuffled_target = permutation_rng.permutation(train[TARGET_COLUMN].to_numpy())
@@ -313,12 +418,21 @@ def _run_protocol_once(
         shuffled_test = predict_attention_probability(
             shuffled_model, test.loc[:, list(FEATURE_COLUMNS)]
         )
-        train_label_controls.append(classification_metrics(
-            test[TARGET_COLUMN],
-            shuffled_test,
-            threshold=shuffled_threshold,
-            budget_share=0.10,
-        ))
+        train_label_controls.append(
+            classification_metrics(
+                test[TARGET_COLUMN],
+                shuffled_test,
+                threshold=shuffled_threshold,
+                budget_share=0.10,
+            )
+        )
+        train_label_capacity_curve = capacity_curve_metrics(
+            test[TARGET_COLUMN], shuffled_test
+        )
+        _assert_primary_capacity_alias(
+            train_label_capacity_curve, train_label_controls[-1]
+        )
+        train_label_capacity_controls.append(train_label_capacity_curve)
 
         alignment_rng = np.random.default_rng(seed + 40_009 + draw * 104_729)
         placebo_validation_target = alignment_rng.permutation(
@@ -337,6 +451,13 @@ def _run_protocol_once(
                 budget_share=0.10,
             )
         )
+        test_alignment_capacity_curve = capacity_curve_metrics(
+            placebo_test_target, test_scores
+        )
+        _assert_primary_capacity_alias(
+            test_alignment_capacity_curve, test_alignment_placebos[-1]
+        )
+        test_alignment_capacity_placebos.append(test_alignment_capacity_curve)
 
     return {
         "manifest": manifest_metadata(split_keys, manifest, spec),
@@ -344,18 +465,22 @@ def _run_protocol_once(
         "overlap_audit": overlap,
         "conflict_retention_gate": conflict_retention,
         "model": _metric_subset(model_metrics, REPORT_METRICS),
+        "model_capacity_curve": model_capacity_curve,
         "baselines": {
             "train_prevalence_probability_and_majority_decision": _metric_subset(
                 prior_metrics, CONSTANT_BASELINE_METRICS
             ),
             "seeded_random_score": _metric_subset(random_metrics, REPORT_METRICS),
         },
+        "seeded_random_capacity_curve": random_capacity_curve,
         "train_label_permutation_controls": [
             _metric_subset(control, REPORT_METRICS) for control in train_label_controls
         ],
         "test_label_alignment_placebos": [
             _metric_subset(control, REPORT_METRICS) for control in test_alignment_placebos
         ],
+        "train_label_permutation_capacity_controls": train_label_capacity_controls,
+        "test_label_alignment_capacity_placebos": test_alignment_capacity_placebos,
         "stress": _stress_evaluation(
             model,
             test,
@@ -424,6 +549,21 @@ def _flatten_control_runs(
         controls = run[key]
         if not isinstance(controls, list):
             raise RuntimeError(f"Invalid negative-control payload: {key}")
+        flattened.extend(controls)
+    return flattened
+
+
+def _flatten_capacity_control_runs(
+    runs: list[dict[str, object]],
+    key: str,
+) -> list[dict[str, object]]:
+    flattened: list[dict[str, object]] = []
+    for run in runs:
+        controls = run[key]
+        if not isinstance(controls, list):
+            raise RuntimeError(f"Invalid capacity-control payload: {key}")
+        if not all(isinstance(control, dict) for control in controls):
+            raise RuntimeError(f"Capacity controls must be aggregate mappings: {key}")
         flattened.extend(controls)
     return flattened
 
@@ -540,8 +680,47 @@ def _control_summary(controls: list[dict[str, float | int]]) -> dict[str, object
     }
 
 
+def _capacity_control_summary(curves: list[dict[str, object]]) -> dict[str, object]:
+    if not curves:
+        raise RuntimeError("A capacity null summary requires capacity curves")
+    point_maps = [_capacity_points_by_share(curve) for curve in curves]
+    return {
+        "pre_specified_budget_shares": list(DEFAULT_CAPACITY_SHARES),
+        "primary_budget_share": PRIMARY_CAPACITY_SHARE,
+        "matches_release_capacity_contract": True,
+        "capacity_selected_post_hoc": False,
+        "draws": len(curves),
+        "points": [
+            {
+                "budget_share": share,
+                "lift_at_budget": aggregate_scalar_runs(
+                    [float(point_map[share]["lift_at_budget"]) for point_map in point_maps]
+                ),
+            }
+            for share in DEFAULT_CAPACITY_SHARES
+        ],
+    }
+
+
+def _diagnostic_control_summary(
+    runs: list[dict[str, object]],
+    *,
+    scalar_key: str,
+    capacity_key: str,
+) -> dict[str, object]:
+    controls = _flatten_control_runs(runs, scalar_key)
+    capacity_curves = _flatten_capacity_control_runs(runs, capacity_key)
+    if len(controls) != len(capacity_curves):
+        raise RuntimeError("Scalar and capacity diagnostic null draws do not align")
+    for control, capacity_curve in zip(controls, capacity_curves, strict=True):
+        _assert_primary_capacity_alias(capacity_curve, control)
+    summary = _control_summary(controls)
+    summary["capacity_lift"] = _capacity_control_summary(capacity_curves)
+    return summary
+
+
 def _enforce_negative_control_runs(runs: list[dict[str, object]]) -> dict[str, object]:
-    """Apply fixed per-draw and aggregate chance gates to two null designs."""
+    """Apply fixed heuristic sanity bounds to two null designs."""
 
     thresholds = {
         "per_draw": {
@@ -554,18 +733,43 @@ def _enforce_negative_control_runs(runs: list[dict[str, object]]) -> dict[str, o
             "average_precision_over_prevalence": [0.80, 1.30],
             "lift_at_10pct_budget": [0.75, 1.35],
         },
+        "capacity_lift": [
+            {
+                "budget_share": item["budget_share"],
+                "per_draw": list(item["per_draw"]),
+                "aggregate_mean": list(item["aggregate_mean"]),
+            }
+            for item in CAPACITY_NULL_THRESHOLDS
+        ],
     }
     designs = {
-        "train_label_permutation": _flatten_control_runs(
-            runs, "train_label_permutation_controls"
-        ),
-        "test_label_alignment_placebo": _flatten_control_runs(
-            runs, "test_label_alignment_placebos"
-        ),
+        "train_label_permutation": {
+            "scalar_controls": _flatten_control_runs(
+                runs, "train_label_permutation_controls"
+            ),
+            "capacity_curves": _flatten_capacity_control_runs(
+                runs, "train_label_permutation_capacity_controls"
+            ),
+        },
+        "test_label_alignment_placebo": {
+            "scalar_controls": _flatten_control_runs(
+                runs, "test_label_alignment_placebos"
+            ),
+            "capacity_curves": _flatten_capacity_control_runs(
+                runs, "test_label_alignment_capacity_placebos"
+            ),
+        },
     }
     summaries: dict[str, object] = {}
-    for design, controls in designs.items():
-        for index, control in enumerate(controls):
+    for design, payload in designs.items():
+        controls = payload["scalar_controls"]
+        capacity_curves = payload["capacity_curves"]
+        if len(controls) != len(capacity_curves):
+            raise RuntimeError(f"{design} scalar and capacity null draws do not align")
+        for index, (control, capacity_curve) in enumerate(
+            zip(controls, capacity_curves, strict=True)
+        ):
+            _assert_primary_capacity_alias(capacity_curve, control)
             prevalence = float(control["attention_prevalence"])
             average_precision = float(control["average_precision_attention"])
             roc_auc = float(control["roc_auc_supplementary"])
@@ -590,6 +794,16 @@ def _enforce_negative_control_runs(runs: list[dict[str, object]]) -> dict[str, o
                     f"{design} draw {index} did not return sufficiently close to chance; "
                     "publication must stop for investigation"
                 )
+            capacity_points = _capacity_points_by_share(capacity_curve)
+            for capacity_threshold in CAPACITY_NULL_THRESHOLDS:
+                share = float(capacity_threshold["budget_share"])
+                capacity_lift = float(capacity_points[share]["lift_at_budget"])
+                lower, upper = capacity_threshold["per_draw"]
+                if not math.isfinite(capacity_lift) or not lower <= capacity_lift <= upper:
+                    raise RuntimeError(
+                        f"{design} draw {index} capacity {share:.0%} did not return "
+                        "sufficiently close to chance; publication must stop for investigation"
+                    )
 
         summary = _control_summary(controls)
         for metric in (
@@ -604,10 +818,30 @@ def _enforce_negative_control_runs(runs: list[dict[str, object]]) -> dict[str, o
                     f"{design} aggregate {metric} did not return to chance; "
                     "publication must stop for investigation"
                 )
+        capacity_summary = _capacity_control_summary(capacity_curves)
+        for point, capacity_threshold in zip(
+            capacity_summary["points"], CAPACITY_NULL_THRESHOLDS, strict=True
+        ):
+            mean = float(point["lift_at_budget"]["mean"])
+            lower, upper = capacity_threshold["aggregate_mean"]
+            if not lower <= mean <= upper:
+                share = float(point["budget_share"])
+                raise RuntimeError(
+                    f"{design} aggregate lift at {share:.0%} capacity did not return to "
+                    "chance; publication must stop for investigation"
+                )
+        summary["capacity_lift"] = capacity_summary
         summaries[design] = summary
 
     return {
         "passed": True,
+        "enforced": True,
+        "gate_interpretation": (
+            "pre-specified fail-closed heuristic sanity bounds; not p-values, a "
+            "multiplicity-adjusted hypothesis test, or a calibrated joint envelope"
+        ),
+        "multiplicity_controlled": False,
+        "permutation_draws_per_split_fixed": PERMUTATION_DRAWS_PER_SPLIT,
         "thresholds": thresholds,
         "designs": summaries,
     }
@@ -701,9 +935,9 @@ def run_synthetic_benchmark(
         raise ValueError("At least one permutation draw per strict split is required")
     if bootstrap_draws < 0:
         raise ValueError("bootstrap_draws must be non-negative")
-    if enforce_negative_control and permutation_draws < PERMUTATION_DRAWS_PER_SPLIT:
+    if enforce_negative_control and permutation_draws != PERMUTATION_DRAWS_PER_SPLIT:
         raise ValueError(
-            "Release-gated benchmark requires at least five permutation draws per strict split"
+            "Release-gated benchmark requires exactly five permutation draws per strict split"
         )
     if enforce_negative_control and bootstrap_draws < DEFAULT_BOOTSTRAP_DRAWS:
         raise ValueError(
@@ -755,18 +989,20 @@ def run_synthetic_benchmark(
         negative_control_gate = {
             "passed": None,
             "enforced": False,
+            "gate_interpretation": (
+                "diagnostic summaries only; release heuristic sanity bounds were not enforced"
+            ),
+            "multiplicity_controlled": False,
             "designs": {
-                "train_label_permutation": _control_summary(
-                    _flatten_control_runs(
-                        raw_runs["fingerprint_group"],
-                        "train_label_permutation_controls",
-                    )
+                "train_label_permutation": _diagnostic_control_summary(
+                    raw_runs["fingerprint_group"],
+                    scalar_key="train_label_permutation_controls",
+                    capacity_key="train_label_permutation_capacity_controls",
                 ),
-                "test_label_alignment_placebo": _control_summary(
-                    _flatten_control_runs(
-                        raw_runs["fingerprint_group"],
-                        "test_label_alignment_placebos",
-                    )
+                "test_label_alignment_placebo": _diagnostic_control_summary(
+                    raw_runs["fingerprint_group"],
+                    scalar_key="test_label_alignment_placebos",
+                    capacity_key="test_label_alignment_capacity_placebos",
                 ),
             },
         }
@@ -782,6 +1018,27 @@ def run_synthetic_benchmark(
 
     sensitivity_ladder = _protocol_sensitivity_ladder(protocol_reports)
     strict_gap = _paired_strict_gap(raw_runs)
+    strict_runs = raw_runs["fingerprint_group"]
+    queue_capacity_sensitivity = {
+        "reference_protocol": "fingerprint_group",
+        "matched_evaluation_seeds": list(seeds),
+        "pre_specified_budget_shares": list(DEFAULT_CAPACITY_SHARES),
+        "primary_budget_share": PRIMARY_CAPACITY_SHARE,
+        "matches_release_capacity_contract": True,
+        "capacity_selected_post_hoc": False,
+        "model_across_matched_seeds": _aggregate_capacity_curves(
+            [run["model_capacity_curve"] for run in strict_runs]
+        ),
+        "seeded_random_score_across_matched_seeds": _aggregate_capacity_curves(
+            [run["seeded_random_capacity_curve"] for run in strict_runs]
+        ),
+        "conditional_interval_path": "conditional_uncertainty.result.capacity_curve.points",
+        "negative_control_gate_path": "runtime_controls.negative_control_gate.designs",
+        "interpretation": (
+            "Pre-specified workload scenarios on an authored synthetic fixture; not observed "
+            "staffing capacity, a post-hoc optimum, or an estimate of business value."
+        ),
+    }
     conditional_uncertainty = raw_runs["fingerprint_group"][0][
         "conditional_cluster_bootstrap"
     ]
@@ -793,7 +1050,7 @@ def run_synthetic_benchmark(
     )
 
     return {
-        "contract_version": "3.0",
+        "contract_version": "4.0",
         "artifact_scope": "aggregate_only_synthetic_reliability_fixture",
         "synthetic_data": True,
         "source_rows_included": False,
@@ -817,6 +1074,16 @@ def run_synthetic_benchmark(
                 "using near-text-fingerprint pairs resampling; separate from multi-seed and "
                 "rolling-origin sensitivity ranges."
             ),
+            "queue_capacity_sensitivity": (
+                "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue "
+                "capacities. Matched-seed ranges are descriptive; frozen-rule cluster "
+                "bootstrap intervals are marginal, not simultaneous."
+            ),
+            "negative_control_sanity_gates": (
+                "Pre-specified fail-closed heuristic bounds for five null draws per strict "
+                "split and their aggregate means; not p-values, family-wise-error control, "
+                "or a calibrated joint envelope."
+            ),
             "sensitivity_ranges": (
                 "Mean, sample standard deviation, minimum, and maximum across deterministic "
                 "runs; not confidence intervals."
@@ -835,8 +1102,13 @@ def run_synthetic_benchmark(
             "target": "rating-derived needs_attention proxy: 1-2 stars=1, 4-5 stars=0",
             "neutral_policy": "3-star rows are excluded inside each assigned partition",
             "intended_decision": (
-                "hypothetically rank a fixed-capacity manual review queue"
+                "hypothetically rank manual-review queues at pre-specified 5%, 10%, "
+                "and 20% workload shares"
             ),
+            "pre_specified_queue_capacity_shares": list(DEFAULT_CAPACITY_SHARES),
+            "primary_queue_capacity_share": PRIMARY_CAPACITY_SHARE,
+            "capacity_selected_post_hoc": False,
+            "staffing_cost_or_value_modeled": False,
             "source_rating_is_target_oracle": True,
             "operational_need_validated": False,
             "scope": "offline synthetic reliability audit, not a deployment claim",
@@ -861,6 +1133,7 @@ def run_synthetic_benchmark(
         "protocols": protocol_reports,
         "protocol_sensitivity_ladder": sensitivity_ladder,
         "paired_strict_gap": strict_gap,
+        "queue_capacity_sensitivity": queue_capacity_sensitivity,
         "conditional_uncertainty": {
             "reference_protocol": "fingerprint_group",
             "reference_evaluation_seed": seeds[0],
@@ -891,11 +1164,15 @@ def run_synthetic_benchmark(
                 if conditional_uncertainty is not None
                 else {"passed": None, "enforced": False}
             ),
+            "capacity_null_gate_scope": (
+                "heuristic train-label permutation and test-label alignment placebo lift "
+                "sanity bounds at each pre-specified 5%, 10%, and 20% capacity"
+            ),
             "rolling_origin_temporal_separation": True,
             "rolling_origin_cross_boundary_entity_isolation": False,
             "legacy_metric_alias": (
                 "classification_metrics keeps pr_auc_attention for private adapter "
-                "compatibility; contract 3.0 reports emit only average_precision_attention"
+                "compatibility; contract 4.0 reports emit only average_precision_attention"
             ),
             "public_safety_validation": "performed_by_CLI_before_write",
         },
@@ -908,6 +1185,15 @@ def run_synthetic_benchmark(
             (
                 "No real-data generalization, fairness, moderation, or business value claim "
                 "is supported."
+            ),
+            (
+                "The 5%, 10%, and 20% queue shares are pre-specified sensitivity scenarios, "
+                "not validated staffing levels; no review cost, action value, or net benefit "
+                "is modeled."
+            ),
+            (
+                "Negative-control bounds are heuristic fail-closed sanity checks, not "
+                "multiplicity-adjusted inferential tests."
             ),
             (
                 "Hash-group protocols approximate deployment risks but cannot reproduce every "

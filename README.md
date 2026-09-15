@@ -16,24 +16,25 @@ model, or real-data performance claim.
 
 ## What this milestone establishes
 
-Version `0.3.0` extends the public artifact to evaluation contract `3.0` without
+Version `0.4.0` extends the public artifact to evaluation contract `4.0` without
 adding source data or a larger model:
 
-- Four pre-specified rolling origins use expanding history, whole-timestamp
-  boundaries, validation-only threshold selection, and non-overlapping future test
-  horizons. Future rows are excluded at each origin.
-- Exact/near-text, user, and product recurrence across every time boundary is
-  measured rather than hidden. Temporal separation is not called leakage-free.
-- Four window-specific 20-draw aggregate-mean gates and one pooled 80-draw
-  aggregate-mean gate require rolling-window test-label placebos to return to
-  chance before the canonical report is written.
-- A frozen canonical fingerprint-group scoring rule receives 2,000 one-way pairs
-  cluster-bootstrap draws by near-text fingerprint. Its marginal 95% percentile
-  intervals are conditional diagnostics, not real-data confidence guarantees.
-- Top-10%-budget metrics now fractionally allocate a cutoff tie. Equal scores can no
-  longer inherit an accidental row, timestamp, or identifier ordering.
-- Ignore rules and report validation reject additional raw-data, model, secret,
-  cluster-key, and resample-index formats.
+- The manual-review workload is no longer represented by one arbitrary point.
+  Queue shares of 5%, 10%, and 20% are pre-specified and always reported together;
+  no capacity is selected after seeing the result.
+- The frozen canonical fingerprint-group scoring rule receives the same 2,000
+  near-text-cluster resamples at all three capacities. The resulting marginal 95%
+  percentile intervals are pointwise diagnostics, not a simultaneous band.
+- Three matched strict-split seeds show descriptive capacity sensitivity separately
+  from bootstrap uncertainty. These ranges are not confidence intervals.
+- Both train-label permutations and test-label-alignment placebos must fall inside
+  pre-specified fail-closed heuristic sanity bounds at every capacity. These bounds
+  are not p-values or multiplicity-adjusted inference; the 5% bounds are wider to
+  reflect the smaller synthetic queue.
+- Queue counts use `ceil`, cutoff ties receive fractional expected allocation, and
+  the 10% curve point must equal every legacy 10%-budget result exactly.
+- The existing four rolling origins, duplicate/entity audits, serving stresses,
+  calibration checks, public-safety checks, and source-data boundary remain in force.
 
 The underlying contract still fixes label-free manifests before partition-local
 3-star exclusion, allows only `summary` and `text` at inference, uses one fitted
@@ -50,7 +51,8 @@ and serving stress without promoting ROC-AUC to the headline.
 | Prediction time | When an unscored summary and body are submitted |
 | Target | `needs_attention=1` for historical ratings 1--2; `0` for 4--5 |
 | Neutral policy | Rating 3 is excluded within each assigned partition |
-| Intended decision | Hypothetically rank a fixed-capacity manual review queue |
+| Intended decision | Hypothetically rank manual-review queues at pre-specified 5%, 10%, and 20% workload shares |
+| Capacity caveat | Sensitivity scenarios only; no staffing cost, action value, or net benefit is modeled |
 | Model inputs | Summary and body text only |
 | Oracle warning | The source rating defines the target; if it is already visible, the model is redundant |
 | Evidence status | Operational need and production value have not been validated |
@@ -86,10 +88,33 @@ sensitivity results on one synthetic fixture, not a superiority claim.
 
 On the fingerprint-group protocol, the training-prevalence probability baseline
 had Brier 0.184 versus 0.162 for the model. Across 15 train-label permutations,
-mean AP/prevalence was 1.117, lift@10% was 1.127, and ROC-AUC was 0.500. Across
-15 test-label-alignment placebo draws, the corresponding means were
-1.009, 0.964, and 0.496. Every draw and both aggregate means passed fixed,
-explicit fail-closed chance gates before the report was written.
+mean AP/prevalence was 1.117 and ROC-AUC was 0.500; mean lifts at 5%/10%/20%
+capacity were 1.262/1.127/1.076. Across 15 test-label-alignment placebo draws,
+the corresponding AP/prevalence and ROC-AUC means were 1.009 and 0.496, while
+capacity lifts were 0.893/0.964/0.958. Every draw and every aggregate capacity
+mean passed the fixed heuristic sanity bounds before the report was written. These
+bounds can stop a suspicious release, but are not a calibrated joint hypothesis test.
+
+### Queue-capacity sensitivity
+
+The table below uses the first strict fingerprint-group split and one frozen scoring
+rule. Queue rows are the actual `ceil` workloads for its 416 labeled test rows. All
+three capacities were specified before the canonical run and share the same 2,000
+cluster-bootstrap resamples.
+
+| Queue share | Queue rows | Precision | Recall | Lift | Conditional 95% lift interval | Lift range across 3 matched seeds |
+|---:|---:|---:|---:|---:|---:|---:|
+| 5% | 21 | 0.333 | 0.068 | 1.35x | [0.51x, 2.17x] | 1.35x–2.89x |
+| 10% | 42 | 0.429 | 0.175 | 1.73x | [0.96x, 2.28x] | 1.73x–2.35x |
+| 20% | 84 | 0.464 | 0.379 | 1.88x | [1.37x, 2.30x] | 1.88x–2.21x |
+
+The 5% and 10% pointwise lift intervals cross the chance value of 1.00x. The 20%
+interval does not, conditional on this one frozen synthetic scoring rule. That is
+not a staffing recommendation or evidence of business value: the three intervals
+are marginal rather than simultaneous (so this is not a family-wise 95% conclusion),
+the target is a rating-derived oracle proxy, and review costs and downstream actions
+are not modeled. The full report also
+retains precision and recall intervals rather than selecting the largest lift.
 
 ### Rolling-origin time sensitivity
 
@@ -113,10 +138,11 @@ aggregate-mean gates and the pooled 80-draw aggregate-mean gate passed.
 
 ### Conditional strict-split uncertainty
 
-The interval below freezes the first fingerprint-group manifest, fitted model, and
-authored synthetic test fixture after partition-local 3-star exclusion. It resamples
-302 near-text fingerprint clusters 2,000 times; the effective cluster count is 210.0,
-the largest cluster is 1.9% of test rows, and no draw is replenished.
+The intervals freeze the first fingerprint-group manifest, fitted model, and
+authored synthetic test fixture after partition-local 3-star exclusion. They
+resample 302 near-text fingerprint clusters 2,000 times; the effective cluster
+count is 210.0, the largest cluster is 1.9% of test rows, and no draw is replenished.
+The non-capacity diagnostics are:
 
 | Metric | Fixed-test estimate | Conditional 95% lower | Conditional 95% upper |
 |---|---:|---:|---:|
@@ -124,16 +150,13 @@ the largest cluster is 1.9% of test rows, and no draw is replenished.
 | AP − prevalence | 0.147 | 0.093 | 0.239 |
 | Brier | 0.169 | 0.149 | 0.188 |
 | Brier improvement vs train-prevalence probability | 0.017 | 0.004 | 0.032 |
-| Recall @ 10% budget | 0.175 | 0.097 | 0.231 |
-| Lift @ 10% budget | 1.73x | 0.96x | 2.28x |
 
 These are marginal percentile intervals conditional on one frozen synthetic scoring
 rule—not uncertainty over retraining, threshold selection, crossed user/product
 dependence, source selection, future drift, or real-data generalization. The AP
 estimate is therefore the canonical seed-1103 point, not the three-seed mean in the
-protocol table. The lift@10% interval of `[0.96x, 2.28x]` crosses the chance value
-of `1.00x`; it therefore does not establish stable queue benefit and cannot support
-a deployment-benefit claim.
+protocol table. Capacity intervals use the same resamples and are shown together in
+the pre-specified capacity table above; none can support a deployment-benefit claim.
 
 The OOV-only stress case was also made structural rather than cosmetic: 100% of
 rows produced zero TF-IDF vectors, AP fell exactly to prevalence (0.242), and
@@ -159,8 +182,8 @@ python -m pip install --no-deps -e .
 # Fast synthetic smoke run; writes an ignored demo artifact.
 python -m review_reliability demo
 
-# Canonical report: five protocols, four rolling origins, 2,000 conditional
-# cluster-bootstrap draws, and strict-split plus temporal label placebos.
+# Canonical report: five protocols, four rolling origins, pre-specified 5/10/20%
+# capacity curves, 2,000 joint cluster-bootstrap draws, and label placebos.
 python -m review_reliability benchmark
 ```
 
@@ -187,7 +210,8 @@ validate label-free split fields
   -> choose decision threshold on validation only
   -> evaluate test against baselines, two strict-split null designs, and stress cases
   -> replay four whole-timestamp rolling origins with disjoint test horizons
-  -> run temporal label placebos and a separate frozen strict-split cluster bootstrap
+  -> run temporal label placebos and three-capacity strict-split null gates
+  -> use one frozen strict-split cluster bootstrap jointly at 5% / 10% / 20%
   -> validate and write aggregate-only JSON
 ```
 
@@ -222,6 +246,8 @@ before attempting any separate private real-data study.
   generalization; repeated text, users, and products still cross time boundaries.
 - The cluster-bootstrap intervals condition on one frozen synthetic scoring rule
   and do not cover retraining, crossed dependence, or future drift.
+- The 5%, 10%, and 20% workloads are sensitivity scenarios, not validated staffing
+  levels; pointwise intervals do not support choosing a capacity after the fact.
 - Token-set grouping is a transparent MVP approximation, not a scalable
   semantic near-duplicate system.
 - A corrected split-first source audit exists privately, but data rights,
@@ -234,7 +260,7 @@ before attempting any separate private real-data study.
    the private split-first adapter as audit evidence until then.
 2. Validate an independently labeled, operationally useful target for feedback
    that does not already expose the source rating.
-3. Add label-availability timestamps or an embargo, plus threshold/capacity
+3. Add label-availability timestamps or an evidence-based embargo, plus threshold
    sensitivity and an explicitly designed time-block uncertainty analysis.
 4. Scale near-duplicate detection with MinHash/LSH and quantify false merges.
 5. Evaluate calibration transfer and recall under realistic prior drift.

@@ -8,9 +8,18 @@ from collections.abc import Iterable
 import numpy as np
 from sklearn.metrics import average_precision_score
 
-from review_reliability.metrics import budget_metrics
+from review_reliability.metrics import (
+    DEFAULT_CAPACITY_SHARES,
+    PRIMARY_CAPACITY_SHARE,
+    _validated_budget_share,
+    _validated_capacity_shares,
+    budget_metrics,
+    capacity_curve_metrics,
+)
 
 DEFAULT_BOOTSTRAP_DRAWS = 2_000
+RELEASE_CONFIDENCE_LEVEL = 0.95
+RELEASE_CLUSTER_UNIT = "near_text_fingerprint"
 BOOTSTRAP_METRICS = (
     "attention_prevalence",
     "average_precision_attention",
@@ -22,6 +31,16 @@ BOOTSTRAP_METRICS = (
     "recall_at_10pct_budget",
     "lift_at_10pct_budget",
 )
+CAPACITY_INTERVAL_METRICS = (
+    "precision_at_budget",
+    "recall_at_budget",
+    "lift_at_budget",
+)
+PRIMARY_CAPACITY_INTERVAL_ALIASES = {
+    "precision_at_budget": "precision_at_10pct_budget",
+    "recall_at_budget": "recall_at_10pct_budget",
+    "lift_at_budget": "lift_at_10pct_budget",
+}
 
 
 def _validated_inputs(
@@ -120,9 +139,10 @@ def conditional_cluster_bootstrap(
     train_prevalence: float,
     draws: int = DEFAULT_BOOTSTRAP_DRAWS,
     seed: int = 73_031,
-    confidence_level: float = 0.95,
-    budget_share: float = 0.10,
-    cluster_unit: str = "near_text_fingerprint",
+    confidence_level: float = RELEASE_CONFIDENCE_LEVEL,
+    budget_share: float = PRIMARY_CAPACITY_SHARE,
+    capacity_shares: Iterable[float] = DEFAULT_CAPACITY_SHARES,
+    cluster_unit: str = RELEASE_CLUSTER_UNIT,
     enforce_release_gate: bool = True,
 ) -> dict[str, object]:
     """Return marginal percentile intervals from one-way pairs cluster resampling.
@@ -139,20 +159,55 @@ def conditional_cluster_bootstrap(
         raise ValueError("draws must be an integer")
     if draws < 20:
         raise ValueError("cluster bootstrap requires at least 20 draws")
+    if not 0.0 < confidence_level < 1.0:
+        raise ValueError("confidence_level must lie in (0, 1)")
+    confidence_level_exact_default = bool(
+        math.isclose(
+            confidence_level,
+            RELEASE_CONFIDENCE_LEVEL,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        )
+    )
+    if enforce_release_gate and not confidence_level_exact_default:
+        raise ValueError("Release-gated cluster bootstrap requires 95% confidence")
+    validated_primary_share = _validated_budget_share(
+        budget_share, name="budget_share"
+    )
+    if not math.isclose(
+        validated_primary_share,
+        PRIMARY_CAPACITY_SHARE,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("budget_share must equal the primary 10% capacity")
+    primary_share = PRIMARY_CAPACITY_SHARE
+    try:
+        validated_capacity_shares = _validated_capacity_shares(capacity_shares)
+    except TypeError as exc:
+        raise ValueError("capacity_shares must be an iterable of real numbers") from exc
+    if PRIMARY_CAPACITY_SHARE not in validated_capacity_shares:
+        raise ValueError("capacity_shares must contain the primary 10% capacity")
+    capacity_shares_exact_default = bool(
+        validated_capacity_shares == DEFAULT_CAPACITY_SHARES
+    )
+    if enforce_release_gate and not capacity_shares_exact_default:
+        raise ValueError(
+            "Release-gated cluster bootstrap requires the exact default capacity shares"
+        )
     if enforce_release_gate and draws < DEFAULT_BOOTSTRAP_DRAWS:
         raise ValueError(
             f"Release-gated cluster bootstrap requires at least "
             f"{DEFAULT_BOOTSTRAP_DRAWS} draws"
         )
-    if not 0.0 < confidence_level < 1.0:
-        raise ValueError("confidence_level must lie in (0, 1)")
-    if not 0.0 < budget_share <= 1.0:
-        raise ValueError("budget_share must lie in (0, 1]")
-    if not math.isclose(budget_share, 0.10, rel_tol=0.0, abs_tol=1e-12):
-        raise ValueError("conditional bootstrap currently supports a 10% budget only")
     if not isinstance(cluster_unit, str) or not cluster_unit.strip():
         raise ValueError("cluster_unit must be a non-empty string")
     cluster_unit = cluster_unit.strip()
+    cluster_unit_exact_default = cluster_unit == RELEASE_CLUSTER_UNIT
+    if enforce_release_gate and not cluster_unit_exact_default:
+        raise ValueError(
+            "Release-gated cluster bootstrap requires near-text-fingerprint clusters"
+        )
 
     unique_clusters = np.asarray(sorted(set(cluster_labels)), dtype=str)
     cluster_code = {value: index for index, value in enumerate(unique_clusters)}
@@ -187,11 +242,34 @@ def conditional_cluster_bootstrap(
         probability,
         point_weights,
         train_prevalence=train_prevalence,
-        budget_share=budget_share,
+        budget_share=primary_share,
     )
+    ranking_at_budget_defined = bool(np.unique(probability).size > 1)
+    point_capacity_points: list[dict[str, object]] = []
+    if ranking_at_budget_defined:
+        point_capacity_points = list(
+            capacity_curve_metrics(
+                y_true,
+                probability,
+                budget_shares=validated_capacity_shares,
+                sample_weight=point_weights,
+            )["points"]
+        )
+        primary_point = next(
+            capacity_point
+            for capacity_point in point_capacity_points
+            if float(capacity_point["budget_share"]) == primary_share
+        )
+        for capacity_metric, legacy_metric in PRIMARY_CAPACITY_INTERVAL_ALIASES.items():
+            if float(primary_point[capacity_metric]) != float(point[legacy_metric]):
+                raise RuntimeError("Primary capacity point does not match its 10% alias")
     metrics_to_interval = tuple(metric for metric in BOOTSTRAP_METRICS if metric in point)
     sampled_values: dict[str, list[float]] = {
         metric: [] for metric in metrics_to_interval
+    }
+    sampled_capacity_values: dict[float, dict[str, list[float]]] = {
+        share: {metric: [] for metric in CAPACITY_INTERVAL_METRICS}
+        for share in validated_capacity_shares
     }
     degenerate_class_draws = 0
     rng = np.random.default_rng(seed)
@@ -204,7 +282,7 @@ def conditional_cluster_bootstrap(
             probability,
             weights,
             train_prevalence=train_prevalence,
-            budget_share=budget_share,
+            budget_share=primary_share,
         )
         if "average_precision_attention" not in values:
             degenerate_class_draws += 1
@@ -213,6 +291,36 @@ def conditional_cluster_bootstrap(
                 raise RuntimeError(f"Non-finite bootstrap metric: {metric}")
             if metric in sampled_values:
                 sampled_values[metric].append(value)
+        if "precision_at_10pct_budget" in values:
+            draw_capacity_points = capacity_curve_metrics(
+                y_true,
+                probability,
+                budget_shares=validated_capacity_shares,
+                sample_weight=weights,
+            )["points"]
+            for capacity_point in draw_capacity_points:
+                share = float(capacity_point["budget_share"])
+                for metric in CAPACITY_INTERVAL_METRICS:
+                    value = float(capacity_point[metric])
+                    if not math.isfinite(value):
+                        raise RuntimeError(
+                            f"Non-finite bootstrap capacity metric: {metric} at {share}"
+                        )
+                    sampled_capacity_values[share][metric].append(value)
+            primary_draw_point = next(
+                capacity_point
+                for capacity_point in draw_capacity_points
+                if float(capacity_point["budget_share"]) == primary_share
+            )
+            for capacity_metric, legacy_metric in (
+                PRIMARY_CAPACITY_INTERVAL_ALIASES.items()
+            ):
+                if float(primary_draw_point[capacity_metric]) != float(
+                    values[legacy_metric]
+                ):
+                    raise RuntimeError(
+                        "Primary capacity draw does not match its 10% alias"
+                    )
 
     alpha = 1.0 - confidence_level
     intervals: dict[str, object] = {}
@@ -251,9 +359,94 @@ def conditional_cluster_bootstrap(
             "point_within_percentile_interval": contains_point,
         }
 
+    capacity_curve_points: list[dict[str, object]] = []
+    for capacity_point in point_capacity_points:
+        share = float(capacity_point["budget_share"])
+        conditional_intervals: dict[str, object] = {}
+        for metric in CAPACITY_INTERVAL_METRICS:
+            if share == primary_share:
+                legacy_metric = PRIMARY_CAPACITY_INTERVAL_ALIASES[metric]
+                conditional_intervals[metric] = dict(intervals[legacy_metric])
+                continue
+            sampled = np.asarray(sampled_capacity_values[share][metric], dtype=float)
+            valid_draws = int(len(sampled))
+            if valid_draws == 0:
+                raise RuntimeError(
+                    f"No valid cluster-bootstrap draws for {metric} at capacity {share}"
+                )
+            valid_share = float(valid_draws / draws)
+            if valid_share < release_thresholds["minimum_valid_draw_share"]:
+                valid_share_passed = False
+            lower, upper = np.quantile(
+                sampled,
+                [alpha / 2.0, 1.0 - alpha / 2.0],
+                method="linear",
+            )
+            estimate = float(capacity_point[metric])
+            interval_valid = bool(
+                math.isfinite(estimate)
+                and math.isfinite(float(lower))
+                and math.isfinite(float(upper))
+                and float(lower) <= float(upper)
+            )
+            intervals_finite_and_ordered &= interval_valid
+            contains_point = bool(float(lower) <= estimate <= float(upper))
+            all_points_within_intervals &= contains_point
+            conditional_intervals[metric] = {
+                "estimate": estimate,
+                "lower": float(lower),
+                "upper": float(upper),
+                "valid_draws": valid_draws,
+                "valid_draw_share": valid_share,
+                "point_within_percentile_interval": contains_point,
+            }
+        capacity_curve_points.append(
+            {
+                "budget_share": share,
+                "point_estimates": {
+                    key: value
+                    for key, value in capacity_point.items()
+                    if key != "budget_share"
+                },
+                "conditional_intervals": conditional_intervals,
+            }
+        )
+
+    capacity_curve = {
+        "pre_specified_budget_shares": list(validated_capacity_shares),
+        "primary_budget_share": primary_share,
+        "matches_release_capacity_contract": capacity_shares_exact_default,
+        "capacity_selected_post_hoc": (
+            False if capacity_shares_exact_default else None
+        ),
+        "capacity_selection_mode": (
+            "release_contract_pre_specified"
+            if capacity_shares_exact_default
+            else "caller_supplied_diagnostic_unverified"
+        ),
+        "scope": (
+            "fixed fitted scoring rule, split manifest, and authored synthetic test "
+            "fixture under the same one-way pairs cluster resamples"
+        ),
+        "interval_scope": "marginal percentile, not simultaneous",
+        "points": capacity_curve_points,
+    }
+    capacity_curve_points_complete = bool(
+        ranking_at_budget_defined
+        and len(capacity_curve_points) == len(validated_capacity_shares)
+        and all(
+            set(point["conditional_intervals"]) == set(CAPACITY_INTERVAL_METRICS)
+            for point in capacity_curve_points
+        )
+    )
+
     release_criteria_met = bool(
         draw_count_passed
         and structure_passed
+        and capacity_shares_exact_default
+        and capacity_curve_points_complete
+        and confidence_level_exact_default
+        and cluster_unit_exact_default
         and valid_share_passed
         and intervals_finite_and_ordered
     )
@@ -277,7 +470,7 @@ def conditional_cluster_bootstrap(
         "clusters": cluster_count,
         "effective_clusters": effective_clusters,
         "largest_cluster_share": largest_cluster_share,
-        "ranking_at_budget_defined": bool(np.unique(probability).size > 1),
+        "ranking_at_budget_defined": ranking_at_budget_defined,
         "budget_metric_omission_rule": (
             "fixed-budget metrics are omitted when all positive-weight scores tie"
         ),
@@ -296,10 +489,18 @@ def conditional_cluster_bootstrap(
             "thresholds": release_thresholds,
             "draw_count_passed": draw_count_passed,
             "structure_passed": structure_passed,
+            "capacity_shares_exact_default": capacity_shares_exact_default,
+            "capacity_curve_points_complete": capacity_curve_points_complete,
+            "required_capacity_shares": list(DEFAULT_CAPACITY_SHARES),
+            "confidence_level_exact_default": confidence_level_exact_default,
+            "required_confidence_level": RELEASE_CONFIDENCE_LEVEL,
+            "cluster_unit_exact_default": cluster_unit_exact_default,
+            "required_cluster_unit": RELEASE_CLUSTER_UNIT,
             "valid_draw_share_passed": valid_share_passed,
             "intervals_finite_and_ordered": intervals_finite_and_ordered,
             "all_points_within_intervals_diagnostic": all_points_within_intervals,
             "point_containment_is_not_a_validity_requirement": True,
         },
         "intervals": intervals,
+        "capacity_curve": capacity_curve,
     }
