@@ -125,7 +125,7 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     report_path = ROOT / "reports" / "synthetic-benchmark.json"
     assert report_path.exists()
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["contract_version"] == "4.0"
+    assert report["contract_version"] == "5.0"
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
     assert report["source_trained_artifacts_included"] is False
@@ -141,6 +141,11 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
         "permutation_draws_per_split_fixed"
     ] == 5
     assert report["runtime_controls"]["permutation_draws_per_fingerprint_split"] == 5
+    for section in (report["decision_contract"], report["runtime_controls"]):
+        assert section["availability_time_observed"] is False
+        assert section["delay_selected_post_hoc"] is False
+        assert section["operational_target_validated"] is False
+        assert section["operational_need_validated"] is False
     capacity = report["queue_capacity_sensitivity"]
     assert capacity["pre_specified_budget_shares"] == [0.05, 0.10, 0.20]
     assert capacity["matches_release_capacity_contract"] is True
@@ -181,6 +186,77 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     ]
     assert pooled_temporal_gate["enforced"] is True
     assert pooled_temporal_gate["passed"] is True
+    rolling = report["rolling_origin_backtest"]
+    delay_sensitivity = rolling["label_delay_sensitivity"]
+    assert delay_sensitivity["delay_days"] == [0, 14, 30]
+    assert set(delay_sensitivity["scenarios"]) == {"0", "14", "30"}
+    assert set(delay_sensitivity["paired_deltas_vs_0"]) == {"14", "30"}
+    assert delay_sensitivity["all_test_horizons_match_zero_day"] is True
+    assert delay_sensitivity["delay_selected_post_hoc"] is False
+    assert delay_sensitivity["availability_time_observed"] is False
+    assert delay_sensitivity["operational_target_validated"] is False
+    assert rolling["windows"] == delay_sensitivity["scenarios"]["0"]["windows"]
+    assert rolling["summary"] == delay_sensitivity["scenarios"]["0"]["summary"]
+    source_rows = report["synthetic_fixture"]["n_rows"]
+    zero_test_horizons = [
+        (
+            window["test_start"],
+            window["test_end"],
+            window["time_bounds"]["test"],
+            window["raw_partition_rows"]["test"],
+        )
+        for window in delay_sensitivity["scenarios"]["0"]["windows"]
+    ]
+    for delay in (0, 14, 30):
+        scenario = delay_sensitivity["scenarios"][str(delay)]
+        assert scenario["label_delay_days"] == delay
+        assert scenario["authored_sensitivity_only"] is (delay != 0)
+        assert scenario["all_test_horizons_match_zero_day"] is True
+        assert scenario["summary"]["windows"] == 4
+        assert scenario["summary"]["test_label_alignment_placebo_gate"][
+            "enforced"
+        ] is True
+        assert scenario["summary"]["test_label_alignment_placebo_gate"]["passed"] is True
+        assert scenario["summary"]["test_label_alignment_placebo_gate"]["draws"] == 80
+        observed_test_horizons = []
+        for window in scenario["windows"]:
+            raw_counts = window["raw_partition_rows"]
+            assert set(raw_counts) == {
+                "train",
+                "validation",
+                "embargo",
+                "test",
+                "future",
+            }
+            assert sum(raw_counts.values()) == source_rows
+            assert window["label_delay_days"] == delay
+            assert window["test_label_alignment_placebo"]["draws"] == 20
+            assert window["test_label_alignment_placebo"]["gate"]["enforced"] is True
+            assert window["test_label_alignment_placebo"]["gate"]["passed"] is True
+            observed_test_horizons.append(
+                (
+                    window["test_start"],
+                    window["test_end"],
+                    window["time_bounds"]["test"],
+                    raw_counts["test"],
+                )
+            )
+        assert observed_test_horizons == zero_test_horizons
+    label_delay_gate = report["runtime_controls"]["label_delay_release_gate"]
+    assert label_delay_gate["enforced"] is True
+    assert label_delay_gate["passed"] is True
+    assert label_delay_gate["expected_delay_days"] == [0, 14, 30]
+    assert label_delay_gate["expected_raw_partition_keys"] == [
+        "train",
+        "validation",
+        "embargo",
+        "test",
+        "future",
+    ]
+    assert label_delay_gate["observed_window_placebo_gates"] == 12
+    assert label_delay_gate["observed_pooled_placebo_gates"] == 3
+    assert label_delay_gate["observed_raw_partition_count_sets"] == 12
+    assert all(label_delay_gate["checks"].values())
     strict_design = report["protocols"]["fingerprint_group"]["negative_control_design"]
     assert strict_design["train_label_permutation_draws"] == 15
     assert strict_design["test_label_alignment_draws"] == 15

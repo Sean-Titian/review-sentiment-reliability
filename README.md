@@ -6,9 +6,9 @@
 
 A clean-room evaluation harness for a rating-proxy review-text classifier. It
 shows how a promising row-random score can be challenged with duplicate-aware,
-entity-grouped, rolling forward-time, calibration, fixed-budget, negative-control,
-conditional uncertainty, and serving-stress checks before anyone makes a deployment
-claim.
+entity-grouped, rolling forward-time, label-availability, calibration, fixed-budget,
+negative-control, conditional uncertainty, and serving-stress checks before anyone
+makes a deployment claim.
 
 The public repository is intentionally **synthetic-only**. It contains no real
 review, user or product identifier, source CSV, course material, source-trained
@@ -16,8 +16,30 @@ model, or real-data performance claim.
 
 ## What this milestone establishes
 
-Version `0.4.0` extends the public artifact to evaluation contract `4.0` without
+Version `0.5.0` extends the public artifact to evaluation contract `5.0` without
 adding source data or a larger model:
+
+- Four fixed rolling test horizons are now replayed under pre-specified 0-, 14-,
+  and 30-day proxy-label delay scenarios. Every scenario evaluates the same test
+  submissions; no delay is selected after seeing the result.
+- Each window assigns every raw row to `train`, `validation`, `embargo`, `test`,
+  or `future`. Whole timestamp blocks remain intact, counts must conserve all
+  2,400 synthetic rows, and embargoed rows cannot enter fitting or threshold
+  selection.
+- On this fixture, 14- and 30-day scenarios exclude 28 and 60 recent raw rows per
+  window while keeping validation and test at 240 raw rows each. Test submissions
+  stay identical; validation shifts earlier. The zero-day path reproduces the
+  prior rolling-origin manifests and metrics exactly.
+- Each delay has four 20-draw window-level test-label placebos; those 80 draws are
+  also checked in one pooled gate. All 12 window gates and all three pooled gates pass their
+  pre-specified heuristic bounds; these are sanity checks, not p-values.
+- Paired metric changes are non-monotonic. Relative to zero delay, mean AP changes by
+  +0.002 at 14 days and -0.009 at 30 days across four correlated windows, while
+  mean lift-at-10% changes by -0.091 and -0.050. These paired ranges are
+  descriptive, not confidence intervals.
+- Label-availability timestamps were not observed: 14 and 30 days are authored
+  sensitivity scenarios, not measured service levels, optimal embargoes, or
+  evidence that the rating-derived proxy is operationally useful.
 
 - The manual-review workload is no longer represented by one arbitrary point.
   Queue shares of 5%, 10%, and 20% are pre-specified and always reported together;
@@ -54,6 +76,8 @@ and serving stress without promoting ROC-AUC to the headline.
 | Intended decision | Hypothetically rank manual-review queues at pre-specified 5%, 10%, and 20% workload shares |
 | Capacity caveat | Sensitivity scenarios only; no staffing cost, action value, or net benefit is modeled |
 | Model inputs | Summary and body text only |
+| Label-delay sensitivity | Pre-specified 0-, 14-, and 30-day authored scenarios with identical test horizons |
+| Availability evidence | No label-availability timestamp was observed; delayed rows are an evaluation stress only |
 | Oracle warning | The source rating defines the target; if it is already visible, the model is redundant |
 | Evidence status | Operational need and production value have not been validated |
 | Claim boundary | Predictive reliability study; no causal or production-value claim |
@@ -116,11 +140,11 @@ the target is a rating-derived oracle proxy, and review costs and downstream act
 are not modeled. The full report also
 retains precision and recall intervals rather than selecting the largest lift.
 
-### Rolling-origin time sensitivity
+### Rolling-origin and label-delay sensitivity
 
-Each row below is a different chronological test horizon. Training history expands;
-the validation and test spans remain adjacent 10% slices, and the four test spans do
-not overlap.
+The zero-day reference below preserves the previous rolling-origin result. Each row
+is a different chronological test horizon. Training history expands; the validation
+and test spans remain adjacent 10% slices, and the four test spans do not overlap.
 
 | Window | Labeled test rows | Prevalence | AP | AP − prevalence | Brier | Recall @ 10% | Lift @ 10% |
 |---:|---:|---:|---:|---:|---:|---:|---:|
@@ -129,12 +153,31 @@ not overlap.
 | 3 | 222 | 0.329 | 0.501 | 0.173 | 0.207 | 0.151 | 1.45x |
 | 4 | 225 | 0.289 | 0.506 | 0.217 | 0.182 | 0.215 | 2.11x |
 
+The same four test horizons are then frozen while recent history is embargoed under
+the 14- and 30-day authored delay scenarios. Deltas are delayed minus zero-day;
+lower Brier is better.
+
+| Delay scenario | Embargoed raw rows per window | Mean AP delta | AP delta range | Mean Brier delta | Mean recall@10% delta | Mean lift@10% delta | Lift@10% delta range |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 days | 0 | 0.000 | [0.000, 0.000] | 0.0000 | 0.000 | 0.000 | [0.000, 0.000] |
+| 14 days | 28 | +0.002 | [-0.008, +0.020] | -0.0002 | -0.009 | -0.091 | [-0.182, 0.000] |
+| 30 days | 60 | -0.009 | [-0.031, +0.002] | +0.0006 | -0.005 | -0.050 | [-0.182, +0.132] |
+
+Each delay refits the model and reselects its threshold using only its eligible
+train and validation rows. These four-window ranges are correlated descriptive
+sensitivities, not confidence intervals or evidence that one delay is preferable.
+The source provides no observed label-availability time; the source rating defines
+the proxy and may already be visible at submission. This exercise tests as-of
+evaluation plumbing for a hypothetical target whose label matures after prediction,
+not an actual SLA.
+
 Chronology does not create cold-start isolation. Depending on the window,
 19.6%–37.1% of raw test rows reuse a near-text fingerprint seen in earlier history,
 97.1%–98.8% reuse a user group, and 100% reuse a product group. Those exposures are
 reported per window. Across 80 test-label-alignment placebos, mean ROC-AUC was
-0.503, AP/prevalence 1.064, and lift@10% 0.972; all four window-specific 20-draw
-aggregate-mean gates and the pooled 80-draw aggregate-mean gate passed.
+0.503, AP/prevalence 1.064, and lift@10% 0.972 in the zero-day reference. Across
+all three delays, all 12 window-specific 20-draw gates passed; each delay's same
+80 draws also passed one pooled gate under the fixed heuristic bounds.
 
 ### Conditional strict-split uncertainty
 
@@ -182,8 +225,8 @@ python -m pip install --no-deps -e .
 # Fast synthetic smoke run; writes an ignored demo artifact.
 python -m review_reliability demo
 
-# Canonical report: five protocols, four rolling origins, pre-specified 5/10/20%
-# capacity curves, 2,000 joint cluster-bootstrap draws, and label placebos.
+# Canonical report: five protocols, four rolling origins at authored 0/14/30-day
+# delays, pre-specified 5/10/20% capacities, 2,000 joint bootstrap draws, and placebos.
 python -m review_reliability benchmark
 ```
 
@@ -210,7 +253,9 @@ validate label-free split fields
   -> choose decision threshold on validation only
   -> evaluate test against baselines, two strict-split null designs, and stress cases
   -> replay four whole-timestamp rolling origins with disjoint test horizons
-  -> run temporal label placebos and three-capacity strict-split null gates
+  -> freeze those horizons across authored 0 / 14 / 30 day label-delay scenarios
+  -> embargo unavailable history before fitting and threshold selection
+  -> run per-delay temporal label placebos and three-capacity strict-split null gates
   -> use one frozen strict-split cluster bootstrap jointly at 5% / 10% / 20%
   -> validate and write aggregate-only JSON
 ```
@@ -248,6 +293,8 @@ before attempting any separate private real-data study.
   and do not cover retraining, crossed dependence, or future drift.
 - The 5%, 10%, and 20% workloads are sensitivity scenarios, not validated staffing
   levels; pointwise intervals do not support choosing a capacity after the fact.
+- The 14- and 30-day delays are authored sensitivity scenarios, not observed label
+  latency, business SLAs, recommended embargoes, or validation of an operational target.
 - Token-set grouping is a transparent MVP approximation, not a scalable
   semantic near-duplicate system.
 - A corrected split-first source audit exists privately, but data rights,
@@ -258,10 +305,11 @@ before attempting any separate private real-data study.
 
 1. Resolve source-data rights before considering any real-data aggregate; keep
    the private split-first adapter as audit evidence until then.
-2. Validate an independently labeled, operationally useful target for feedback
-   that does not already expose the source rating.
-3. Add label-availability timestamps or an evidence-based embargo, plus threshold
-   sensitivity and an explicitly designed time-block uncertainty analysis.
+2. Obtain an independently labeled, operationally useful target with an observed
+   outcome window and `label_available_at`; the current fixed delays remain a
+   synthetic plumbing test until then.
+3. Add threshold sensitivity and an explicitly designed time-block uncertainty
+   analysis once that target and its maturity process exist.
 4. Scale near-duplicate detection with MinHash/LSH and quantify false merges.
 5. Evaluate calibration transfer and recall under realistic prior drift.
 6. Add error slices only when they pass the documented small-cell and

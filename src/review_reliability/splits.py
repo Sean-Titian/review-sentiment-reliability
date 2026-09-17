@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import math
 from dataclasses import dataclass
+from numbers import Integral
 from typing import Literal
 
 import pandas as pd
@@ -33,6 +34,8 @@ PROTOCOL_ISOLATION_COLUMNS: dict[Protocol, tuple[str, ...]] = {
     "product_group": ("product_group",),
     "forward_time": (),
 }
+
+DEFAULT_LABEL_DELAY_DAYS: tuple[int, ...] = (0, 14, 30)
 
 
 @dataclass(frozen=True)
@@ -255,6 +258,140 @@ def make_rolling_origin_manifests(
         manifests.append(manifest)
 
     return tuple(manifests)
+
+
+def _validated_label_delays(delay_days: tuple[int, ...]) -> tuple[int, ...]:
+    """Return a canonical, fail-closed label-delay sensitivity grid."""
+
+    try:
+        delays = tuple(delay_days)
+    except TypeError as exc:
+        raise ValueError("Label delays must be a finite sequence of integers") from exc
+    if not delays or any(
+        isinstance(delay, bool) or not isinstance(delay, Integral) or int(delay) < 0
+        for delay in delays
+    ):
+        raise ValueError("Label delays must be non-negative finite integers")
+    normalized = tuple(int(delay) for delay in delays)
+    if 0 not in normalized:
+        raise ValueError("Label delays must include the zero-day reference")
+    if any(
+        current >= following
+        for current, following in zip(normalized[:-1], normalized[1:], strict=True)
+    ):
+        raise ValueError("Label delays must be strictly increasing with no duplicates")
+    return normalized
+
+
+def _recent_validation_start(
+    timestamps: pd.Series,
+    *,
+    maturity_cutoff: pd.Timestamp,
+    target_rows: int,
+) -> pd.Timestamp:
+    """Choose the closest-size recent whole-block validation history."""
+
+    historical = timestamps.loc[timestamps < maturity_cutoff]
+    block_counts = historical.value_counts(sort=False).sort_index()
+    if len(block_counts) < 2:
+        raise ValueError("Label delay leaves an empty train or validation partition")
+
+    reverse_counts = block_counts.iloc[::-1].cumsum().iloc[::-1]
+    candidates = [
+        (abs(int(reverse_counts.iloc[index]) - target_rows), -index, index)
+        for index in range(1, len(block_counts))
+    ]
+    _, _, start_index = min(candidates)
+    return pd.Timestamp(block_counts.index[start_index])
+
+
+def make_label_delay_rolling_manifests(
+    split_keys: pd.DataFrame,
+    spec: RollingOriginSpec | None = None,
+    delay_days: tuple[int, ...] = DEFAULT_LABEL_DELAY_DAYS,
+) -> dict[int, tuple[pd.DataFrame, ...]]:
+    """Build full rolling manifests under pre-specified label-maturity delays.
+
+    The test horizon is frozen to the zero-delay rolling-origin design. For a
+    delay ``d``, labels at or after ``test_start - d days`` are embargoed. The
+    most recent whole timestamp blocks before that cutoff become validation,
+    with a raw-row count as close as possible to the zero-delay validation
+    count; all earlier rows become train. Every returned manifest assigns every
+    input row exactly once to train, validation, embargo, test, or future.
+
+    Manifests deliberately contain only ``review_id`` and ``partition``. Safe
+    window metadata is attached through ``DataFrame.attrs`` using the keys
+    ``window``, ``label_delay_days``, ``test_start``, ``maturity_cutoff``,
+    ``test_end``, ``target_validation_raw_rows``, and
+    ``actual_validation_raw_rows``.
+    """
+
+    spec = spec or RollingOriginSpec()
+    delays = _validated_label_delays(delay_days)
+    base_manifests = make_rolling_origin_manifests(split_keys, spec)
+    keys = split_keys.loc[:, list(SPLIT_KEY_COLUMNS)].copy()
+    keys["event_time"] = pd.to_datetime(keys["event_time"], utc=True)
+    timestamps = keys["event_time"]
+    all_ids = set(keys["review_id"])
+    output: dict[int, list[pd.DataFrame]] = {delay: [] for delay in delays}
+
+    for window_index, base_manifest in enumerate(base_manifests, start=1):
+        base_partition = base_manifest.set_index("review_id")["partition"]
+        test_ids = set(
+            base_manifest.loc[base_manifest["partition"] == "test", "review_id"]
+        )
+        test_times = timestamps.loc[keys["review_id"].isin(test_ids)]
+        test_start = pd.Timestamp(test_times.min())
+        target_validation_rows = int(base_manifest["partition"].eq("validation").sum())
+        future_ids = all_ids - set(base_manifest["review_id"])
+        future_times = timestamps.loc[keys["review_id"].isin(future_ids)]
+        test_end = None if future_times.empty else pd.Timestamp(future_times.min())
+
+        for delay in delays:
+            try:
+                maturity_cutoff = test_start - pd.Timedelta(days=delay)
+            except (OverflowError, ValueError) as exc:
+                raise ValueError(
+                    "Label delay leaves an empty train or validation partition"
+                ) from exc
+            if delay == 0:
+                partition = keys["review_id"].map(base_partition).fillna("future")
+            else:
+                validation_start = _recent_validation_start(
+                    timestamps,
+                    maturity_cutoff=maturity_cutoff,
+                    target_rows=target_validation_rows,
+                )
+                partition = pd.Series("future", index=keys.index, dtype="object")
+                partition.loc[timestamps < test_start] = "embargo"
+                partition.loc[timestamps < maturity_cutoff] = "validation"
+                partition.loc[timestamps < validation_start] = "train"
+                partition.loc[keys["review_id"].isin(test_ids)] = "test"
+
+            manifest = pd.DataFrame(
+                {"review_id": keys["review_id"], "partition": partition},
+                index=keys.index,
+            ).sort_values("review_id", kind="mergesort", ignore_index=True)
+            if len(manifest) != len(keys) or manifest["review_id"].duplicated().any():
+                raise RuntimeError("Label-delay manifest must assign every review exactly once")
+            if set(manifest["review_id"]) != all_ids:
+                raise RuntimeError("Label-delay manifest review IDs do not match split keys")
+            if not {"train", "validation"} <= set(manifest["partition"]):
+                raise ValueError("Label delay leaves an empty train or validation partition")
+            manifest.attrs = {
+                "window": window_index,
+                "label_delay_days": delay,
+                "test_start": test_start.isoformat(),
+                "maturity_cutoff": maturity_cutoff.isoformat(),
+                "test_end": None if test_end is None else test_end.isoformat(),
+                "target_validation_raw_rows": target_validation_rows,
+                "actual_validation_raw_rows": int(
+                    manifest["partition"].eq("validation").sum()
+                ),
+            }
+            output[delay].append(manifest)
+
+    return {delay: tuple(manifests) for delay, manifests in output.items()}
 
 
 def attach_manifest(frame: pd.DataFrame, manifest: pd.DataFrame) -> pd.DataFrame:

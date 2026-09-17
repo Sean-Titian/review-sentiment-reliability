@@ -8,6 +8,7 @@ from review_reliability.cli import write_aggregate_report
 from review_reliability.data import SyntheticConfig
 from review_reliability.evaluation import (
     _enforce_negative_control_runs,
+    _label_delay_release_gate,
     run_synthetic_benchmark,
 )
 from review_reliability.public_safety import assert_aggregate_report_safe
@@ -34,9 +35,17 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
     assert strict["negative_control_train_label_permutation"] is not None
     assert strict["placebo_test_label_alignment"] is not None
     assert strict["conflict_retention_gate"]["all_runs_passed"] is True
-    assert report["contract_version"] == "4.0"
+    assert report["contract_version"] == "5.0"
     assert report["runtime_controls"]["protocol_isolation_fail_closed"] is True
     assert report["decision_contract"]["causal_claim"] is False
+    assert report["decision_contract"]["availability_time_observed"] is False
+    assert report["decision_contract"]["delay_selected_post_hoc"] is False
+    assert report["decision_contract"]["operational_target_validated"] is False
+    assert report["decision_contract"]["operational_need_validated"] is False
+    assert report["runtime_controls"]["availability_time_observed"] is False
+    assert report["runtime_controls"]["delay_selected_post_hoc"] is False
+    assert report["runtime_controls"]["operational_target_validated"] is False
+    assert report["runtime_controls"]["operational_need_validated"] is False
     assert report["runtime_controls"]["target_bearing_split_columns"] == []
     assert report["conditional_uncertainty"]["reference_protocol"] == "fingerprint_group"
     assert report["conditional_uncertainty"]["result"]["draws_attempted"] == 40
@@ -53,8 +62,123 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
         assert [
             point["budget_share"] for point in design["capacity_lift"]["points"]
         ] == [0.05, 0.10, 0.20]
-    assert report["rolling_origin_backtest"]["summary"]["windows"] == 4
+    rolling = report["rolling_origin_backtest"]
+    assert rolling["summary"]["windows"] == 4
+    delay_sensitivity = rolling["label_delay_sensitivity"]
+    assert delay_sensitivity["delay_days"] == [0, 14, 30]
+    assert set(delay_sensitivity["scenarios"]) == {"0", "14", "30"}
+    assert delay_sensitivity["all_test_horizons_match_zero_day"] is True
+    assert delay_sensitivity["delay_selected_post_hoc"] is False
+    assert delay_sensitivity["availability_time_observed"] is False
+    assert delay_sensitivity["operational_target_validated"] is False
+    assert rolling["windows"] == delay_sensitivity["scenarios"]["0"]["windows"]
+    assert rolling["summary"] == delay_sensitivity["scenarios"]["0"]["summary"]
+    zero_test_horizons = [
+        (
+            window["test_start"],
+            window["test_end"],
+            window["time_bounds"]["test"],
+            window["raw_partition_rows"]["test"],
+        )
+        for window in delay_sensitivity["scenarios"]["0"]["windows"]
+    ]
+    for delay in (0, 14, 30):
+        scenario = delay_sensitivity["scenarios"][str(delay)]
+        assert scenario["label_delay_days"] == delay
+        assert scenario["authored_sensitivity_only"] is (delay != 0)
+        assert scenario["all_test_horizons_match_zero_day"] is True
+        assert scenario["summary"]["windows"] == 4
+        observed_test_horizons = []
+        for window in scenario["windows"]:
+            raw_counts = window["raw_partition_rows"]
+            assert set(raw_counts) == {
+                "train",
+                "validation",
+                "embargo",
+                "test",
+                "future",
+            }
+            assert sum(raw_counts.values()) == 360
+            assert window["label_delay_days"] == delay
+            assert window["test_label_alignment_placebo"]["gate"]["enforced"] is False
+            observed_test_horizons.append(
+                (
+                    window["test_start"],
+                    window["test_end"],
+                    window["time_bounds"]["test"],
+                    raw_counts["test"],
+                )
+            )
+        assert observed_test_horizons == zero_test_horizons
+        assert scenario["summary"]["test_label_alignment_placebo_gate"][
+            "enforced"
+        ] is False
+    label_delay_gate = report["runtime_controls"]["label_delay_release_gate"]
+    assert label_delay_gate["enforced"] is False
+    assert label_delay_gate["passed"] is None
+    assert label_delay_gate["expected_delay_days"] == [0, 14, 30]
+    assert label_delay_gate["observed_window_placebo_gates"] == 12
+    assert label_delay_gate["observed_pooled_placebo_gates"] == 3
+    assert label_delay_gate["observed_raw_partition_count_sets"] == 12
+    assert label_delay_gate["checks"]["test_horizon_metadata_match_zero_day"] is True
+    assert label_delay_gate["checks"]["raw_partition_counts_conserve_source_rows"] is True
+    assert label_delay_gate["checks"]["window_placebo_gates_release_ready"] is False
+    limitations = " ".join(report["limitations"])
+    for required_caveat in (
+        "target oracle",
+        "recurring text, users, and products across time",
+        "not confidence intervals",
+        "causal",
+        "business value",
+    ):
+        assert required_caveat in limitations
     assert_aggregate_report_safe(report)
+
+    release_ready = json.loads(json.dumps(rolling))
+    for scenario in release_ready["label_delay_sensitivity"]["scenarios"].values():
+        for window in scenario["windows"]:
+            window["test_label_alignment_placebo"]["draws"] = 20
+            window["test_label_alignment_placebo"]["gate"].update(
+                {"draws": 20, "enforced": True, "passed": True}
+            )
+        scenario["summary"]["test_label_alignment_placebo_gate"].update(
+            {"draws": 80, "enforced": True, "passed": True}
+        )
+    release_ready["windows"] = release_ready["label_delay_sensitivity"]["scenarios"][
+        "0"
+    ]["windows"]
+    release_ready["summary"] = release_ready["label_delay_sensitivity"]["scenarios"][
+        "0"
+    ]["summary"]
+    enforced_gate = _label_delay_release_gate(
+        release_ready,
+        expected_source_rows=360,
+        enforced=True,
+    )
+    assert enforced_gate["passed"] is True
+    assert all(enforced_gate["checks"].values())
+
+    tampered = json.loads(json.dumps(release_ready))
+    tampered["label_delay_sensitivity"]["scenarios"]["14"]["windows"][0][
+        "test_start"
+    ] = "2099-01-01T00:00:00+00:00"
+    with pytest.raises(RuntimeError, match="test_horizon_metadata_match_zero_day"):
+        _label_delay_release_gate(
+            tampered,
+            expected_source_rows=360,
+            enforced=True,
+        )
+
+    tampered_order = json.loads(json.dumps(release_ready))
+    tampered_order["label_delay_sensitivity"]["scenarios"]["30"]["summary"][
+        "all_partitions_strictly_time_ordered"
+    ] = False
+    with pytest.raises(RuntimeError, match="scenario_temporal_integrity_release_ready"):
+        _label_delay_release_gate(
+            tampered_order,
+            expected_source_rows=360,
+            enforced=True,
+        )
 
 
 def test_stress_cases_keep_finite_aggregate_metrics() -> None:

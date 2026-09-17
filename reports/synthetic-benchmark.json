@@ -268,7 +268,7 @@
       "test_rows_after_partition_local_neutral_exclusion": 416
     }
   },
-  "contract_version": "4.0",
+  "contract_version": "5.0",
   "data_audit": {
     "attention_prevalence": 0.2529147982,
     "conflicting_proxy_fingerprint_groups": 123,
@@ -306,15 +306,24 @@
   },
   "decision_contract": {
     "analysis_unit": "one unique review submission",
+    "availability_time_observed": false,
     "available_model_features": [
       "summary",
       "text"
     ],
     "capacity_selected_post_hoc": false,
     "causal_claim": false,
+    "delay_selected_post_hoc": false,
     "intended_decision": "hypothetically rank manual-review queues at pre-specified 5%, 10%, and 20% workload shares",
+    "label_delay_days": [
+      0,
+      14,
+      30
+    ],
+    "label_delay_scenario_scope": "14- and 30-day delays are authored sensitivity scenarios, not business SLAs",
     "neutral_policy": "3-star rows are excluded inside each assigned partition",
     "operational_need_validated": false,
+    "operational_target_validated": false,
     "pre_specified_queue_capacity_shares": [
       0.05,
       0.1,
@@ -334,21 +343,23 @@
   ],
   "limitations": [
     "All scores come from authored synthetic text and demonstrate the evaluation system only.",
-    "The target is a rating-derived proxy, not human-annotated sentiment or causal impact.",
-    "No real-data generalization, fairness, moderation, or business value claim is supported.",
+    "The source rating is the target oracle for this rating-derived proxy; when ratings are available at decision time, a text score may be operationally redundant. The proxy is not human-annotated sentiment or causal impact.",
+    "No real-data generalization, fairness, moderation, causal, operational, or business value claim is supported.",
     "The 5%, 10%, and 20% queue shares are pre-specified sensitivity scenarios, not validated staffing levels; no review cost, action value, or net benefit is modeled.",
     "Negative-control bounds are heuristic fail-closed sanity checks, not multiplicity-adjusted inferential tests.",
     "Hash-group protocols approximate deployment risks but cannot reproduce every source shift.",
     "A corrected split-first source audit exists privately, but source rights, target validity, and public-safe aggregation still block any real-data metric release.",
     "Multi-seed min/max values describe protocol and optimizer sensitivity; they are not sampling confidence intervals.",
     "The conditional cluster-bootstrap interval holds one synthetic fitted model and test manifest fixed; it does not cover retraining, crossed dependence, source selection, temporal drift, or real-data generalization.",
-    "Rolling-origin windows preserve chronology but allow recurring text, users, and products across time; those overlaps are audited rather than removed."
+    "Rolling-origin windows preserve chronology but allow recurring text, users, and products across time; those overlaps are audited rather than removed.",
+    "Label-availability timestamps were not observed. The 14- and 30-day delays are authored stress scenarios, not validated operational SLAs, and their paired rolling-origin ranges are not confidence intervals."
   ],
   "metric_definitions": {
     "average_precision_attention": "Non-interpolated average precision from scikit-learn; prevalence is the no-skill reference for the attention class.",
     "brier": "Mean squared probability error; lower is better.",
     "budget_ranking_tie_policy": "A cutoff score tie uses fractional expected allocation, independent of row order. Stress and conditional-uncertainty summaries omit recall and lift when all scores tie because no model ranking exists.",
     "conditional_cluster_bootstrap": "A 95% percentile interval for one frozen fingerprint-group scoring rule, using near-text-fingerprint pairs resampling; separate from multi-seed and rolling-origin sensitivity ranges.",
+    "label_delay_sensitivity": "Rolling-origin comparisons at pre-specified 0-, 14-, and 30-day proxy-label availability delays with identical test horizons. Delayed rows are embargoed from fitting and threshold selection; 14 and 30 days are authored scenarios, not observed service-level agreements.",
     "negative_control_sanity_gates": "Pre-specified fail-closed heuristic bounds for five null draws per strict split and their aggregate means; not p-values, family-wise-error control, or a calibrated joint envelope.",
     "queue_capacity_sensitivity": "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue capacities. Matched-seed ranges are descriptive; frozen-rule cluster bootstrap intervals are marginal, not simultaneous.",
     "roc_auc_supplementary": "Ranking metric reported only as a supplementary discrimination view.",
@@ -7593,19 +7604,2930 @@
       "boundary_basis": "label-free row shares snapped to whole timestamps",
       "first_train_share": 0.5,
       "future_rows_after_test_horizon": "excluded from fitting and threshold selection",
-      "label_availability_gap": "not modeled; zero-gap assumption",
+      "label_availability_gap": "authored 0-, 14-, and 30-day sensitivity; availability timestamps were not observed",
       "step_share": 0.1,
-      "test_horizons": "non-overlapping",
+      "test_horizons": "non-overlapping and fixed across label-delay scenarios",
       "test_label_alignment_placebos_per_window": 20,
       "test_share": 0.1,
       "training_mode": "expanding",
       "validation_share": 0.1,
       "windows": 4
     },
+    "label_delay_sensitivity": {
+      "all_test_horizons_match_zero_day": true,
+      "availability_time_observed": false,
+      "delay_days": [
+        0,
+        14,
+        30
+      ],
+      "delay_selected_post_hoc": false,
+      "interpretation": "The 14- and 30-day delays are authored sensitivity scenarios, not observed service-level agreements or operational recommendations.",
+      "operational_target_validated": false,
+      "paired_deltas_vs_0": {
+        "14": {
+          "comparison_delay_days": 14,
+          "interpretation": "delayed scenario minus the paired zero-day scenario",
+          "metric_delta_ranges": {
+            "attention_prevalence": {
+              "max": 0.0,
+              "mean": 0.0,
+              "min": 0.0,
+              "runs": 4,
+              "std": 0.0
+            },
+            "average_precision_attention": {
+              "max": 0.019880188,
+              "mean": 0.0023822122,
+              "min": -0.0076314644,
+              "runs": 4,
+              "std": 0.0124889231
+            },
+            "average_precision_minus_prevalence": {
+              "max": 0.019880188,
+              "mean": 0.0023822122,
+              "min": -0.0076314644,
+              "runs": 4,
+              "std": 0.0124889231
+            },
+            "average_precision_over_prevalence": {
+              "max": 0.0688160353,
+              "mean": 0.0079280188,
+              "min": -0.0319657563,
+              "runs": 4,
+              "std": 0.0443904568
+            },
+            "brier": {
+              "max": 0.000545237,
+              "mean": -0.0002234927,
+              "min": -0.001750506,
+              "runs": 4,
+              "std": 0.0010344466
+            },
+            "brier_improvement_vs_train_prevalence": {
+              "max": 0.0017520365,
+              "mean": 0.0001379039,
+              "min": -0.0005451811,
+              "runs": 4,
+              "std": 0.0010896927
+            },
+            "lift_at_budget": {
+              "max": 0.0,
+              "mean": -0.0910582445,
+              "min": -0.1821164889,
+              "runs": 4,
+              "std": 0.1051450039
+            },
+            "recall_at_budget": {
+              "max": 0.0,
+              "mean": -0.0094339623,
+              "min": -0.0188679245,
+              "runs": 4,
+              "std": 0.0108934013
+            }
+          },
+          "reference_delay_days": 0,
+          "windows": [
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": -0.0076314644,
+                "average_precision_minus_prevalence": -0.0076314644,
+                "average_precision_over_prevalence": -0.0319657563,
+                "brier": 0.000545237,
+                "brier_improvement_vs_train_prevalence": -0.0005451811,
+                "lift_at_budget": -0.1821164889,
+                "recall_at_budget": -0.0188679245
+              },
+              "window": 1
+            },
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": 0.0027302558,
+                "average_precision_minus_prevalence": 0.0027302558,
+                "average_precision_over_prevalence": 0.0114361658,
+                "brier": 0.0001593709,
+                "brier_improvement_vs_train_prevalence": -0.0001590432,
+                "lift_at_budget": -0.1821164889,
+                "recall_at_budget": -0.0188679245
+              },
+              "window": 2
+            },
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": -0.0054501305,
+                "average_precision_minus_prevalence": -0.0054501305,
+                "average_precision_over_prevalence": -0.0165743695,
+                "brier": 0.0001519272,
+                "brier_improvement_vs_train_prevalence": -0.0004961967,
+                "lift_at_budget": 0.0,
+                "recall_at_budget": 0.0
+              },
+              "window": 3
+            },
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": 0.019880188,
+                "average_precision_minus_prevalence": 0.019880188,
+                "average_precision_over_prevalence": 0.0688160353,
+                "brier": -0.001750506,
+                "brier_improvement_vs_train_prevalence": 0.0017520365,
+                "lift_at_budget": 0.0,
+                "recall_at_budget": 0.0
+              },
+              "window": 4
+            }
+          ]
+        },
+        "30": {
+          "comparison_delay_days": 30,
+          "interpretation": "delayed scenario minus the paired zero-day scenario",
+          "metric_delta_ranges": {
+            "attention_prevalence": {
+              "max": 0.0,
+              "mean": 0.0,
+              "min": 0.0,
+              "runs": 4,
+              "std": 0.0
+            },
+            "average_precision_attention": {
+              "max": 0.0019462757,
+              "mean": -0.0086644982,
+              "min": -0.0308932074,
+              "runs": 4,
+              "std": 0.0151515094
+            },
+            "average_precision_minus_prevalence": {
+              "max": 0.0019462757,
+              "mean": -0.0086644982,
+              "min": -0.0308932074,
+              "runs": 4,
+              "std": 0.0151515094
+            },
+            "average_precision_over_prevalence": {
+              "max": 0.0059188111,
+              "mean": -0.0312352545,
+              "min": -0.1069380257,
+              "runs": 4,
+              "std": 0.0519902467
+            },
+            "brier": {
+              "max": 0.0032369346,
+              "mean": 0.0006042805,
+              "min": -0.0004792277,
+              "runs": 4,
+              "std": 0.0017620814
+            },
+            "brier_improvement_vs_train_prevalence": {
+              "max": 0.0002415569,
+              "mean": -0.0007453136,
+              "min": -0.0034286683,
+              "runs": 4,
+              "std": 0.0017901022
+            },
+            "lift_at_budget": {
+              "max": 0.1322215605,
+              "mean": -0.0500991502,
+              "min": -0.1821164889,
+              "runs": 4,
+              "std": 0.1452125001
+            },
+            "recall_at_budget": {
+              "max": 0.0136986301,
+              "mean": -0.0051384774,
+              "min": -0.0188679245,
+              "runs": 4,
+              "std": 0.0149969067
+            }
+          },
+          "reference_delay_days": 0,
+          "windows": [
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": -0.0055492703,
+                "average_precision_minus_prevalence": -0.0055492703,
+                "average_precision_over_prevalence": -0.0232441133,
+                "brier": -9.95506e-05,
+                "brier_improvement_vs_train_prevalence": 9.73366e-05,
+                "lift_at_budget": -0.1821164889,
+                "recall_at_budget": -0.0188679245
+              },
+              "window": 1
+            },
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": -0.0001617909,
+                "average_precision_minus_prevalence": -0.0001617909,
+                "average_precision_over_prevalence": -0.0006776901,
+                "brier": -0.0002410341,
+                "brier_improvement_vs_train_prevalence": 0.0002415569,
+                "lift_at_budget": 0.0,
+                "recall_at_budget": 0.0
+              },
+              "window": 2
+            },
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": 0.0019462757,
+                "average_precision_minus_prevalence": 0.0019462757,
+                "average_precision_over_prevalence": 0.0059188111,
+                "brier": -0.0004792277,
+                "brier_improvement_vs_train_prevalence": 0.0001085205,
+                "lift_at_budget": 0.1322215605,
+                "recall_at_budget": 0.0136986301
+              },
+              "window": 3
+            },
+            {
+              "metric_deltas": {
+                "attention_prevalence": 0.0,
+                "average_precision_attention": -0.0308932074,
+                "average_precision_minus_prevalence": -0.0308932074,
+                "average_precision_over_prevalence": -0.1069380257,
+                "brier": 0.0032369346,
+                "brier_improvement_vs_train_prevalence": -0.0034286683,
+                "lift_at_budget": -0.1505016722,
+                "recall_at_budget": -0.0153846154
+              },
+              "window": 4
+            }
+          ]
+        }
+      },
+      "scenarios": {
+        "0": {
+          "all_test_horizons_match_zero_day": true,
+          "authored_sensitivity_only": false,
+          "label_delay_days": 0,
+          "summary": {
+            "all_partitions_strictly_time_ordered": true,
+            "all_test_horizons_non_overlapping": true,
+            "all_training_histories_expanding": true,
+            "metric_ranges": {
+              "attention_prevalence": {
+                "max": 0.3288288288,
+                "mean": 0.2737987988,
+                "min": 0.2387387387,
+                "runs": 4,
+                "std": 0.0436441315
+              },
+              "average_precision_attention": {
+                "max": 0.5229052927,
+                "mean": 0.4967895787,
+                "min": 0.4569893844,
+                "runs": 4,
+                "std": 0.0281020726
+              },
+              "average_precision_minus_prevalence": {
+                "max": 0.284166554,
+                "mean": 0.2229907799,
+                "min": 0.1726280225,
+                "runs": 4,
+                "std": 0.045964593
+              },
+              "average_precision_over_prevalence": {
+                "max": 2.1902825468,
+                "mean": 1.8450781279,
+                "min": 1.5249783697,
+                "runs": 4,
+                "std": 0.2800479259
+              },
+              "brier": {
+                "max": 0.2067624959,
+                "mean": 0.1764727683,
+                "min": 0.1573492096,
+                "runs": 4,
+                "std": 0.0228824508
+              },
+              "brier_improvement_vs_train_prevalence": {
+                "max": 0.0264253202,
+                "mean": 0.0235762828,
+                "min": 0.0214701592,
+                "runs": 4,
+                "std": 0.0022843065
+              },
+              "lift_at_budget": {
+                "max": 2.7317473339,
+                "mean": 2.1196514443,
+                "min": 1.454437165,
+                "runs": 4,
+                "std": 0.5233397478
+              },
+              "recall_at_budget": {
+                "max": 0.2830188679,
+                "mean": 0.2188758773,
+                "min": 0.1506849315,
+                "runs": 4,
+                "std": 0.0542628081
+              }
+            },
+            "range_interpretation": "descriptive variation across correlated synthetic rolling origins, not a confidence interval",
+            "test_label_alignment_placebo_gate": {
+              "draws": 80,
+              "enforced": true,
+              "passed": true,
+              "summary": {
+                "average_precision_over_prevalence": {
+                  "max": 1.7734227649,
+                  "mean": 1.0635533688,
+                  "min": 0.8436412502,
+                  "runs": 80,
+                  "std": 0.1324954461
+                },
+                "lift_at_10pct_budget": {
+                  "max": 1.8211648893,
+                  "mean": 0.9716483004,
+                  "min": 0.1821164889,
+                  "runs": 80,
+                  "std": 0.3356105673
+                },
+                "roc_auc": {
+                  "max": 0.6584235793,
+                  "mean": 0.5031838543,
+                  "min": 0.4006363738,
+                  "runs": 80,
+                  "std": 0.0471670672
+                }
+              },
+              "thresholds_for_aggregate_mean": {
+                "average_precision_over_prevalence": [
+                  0.8,
+                  1.3
+                ],
+                "lift_at_10pct_budget": [
+                  0.75,
+                  1.35
+                ],
+                "roc_auc": [
+                  0.45,
+                  0.55
+                ]
+              }
+            },
+            "windows": 4
+          },
+          "windows": [
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.2528725685,
+                  "brier": 0.3365359418,
+                  "lift_at_budget": 1.0926989336,
+                  "recall_at_budget": 0.1132075472
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2387387387,
+                  "brier": 0.1817461747,
+                  "test_attention_prevalence": 0.2387387387,
+                  "train_prevalence": 0.2406417112
+                }
+              },
+              "embargo_raw_rows_excluded": 0,
+              "full_time_bounds": {
+                "embargo": null,
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-08-22T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2025-12-20T12:00:00+00:00",
+                  "min": "2025-08-23T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 720,
+              "label_availability_cutoff": "2025-12-21T00:00:00+00:00",
+              "label_delay_days": 0,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1122,
+                "validation": 217
+              },
+              "model": {
+                "attention_prevalence": 0.2387387387,
+                "average_precision_attention": 0.4569893844,
+                "average_precision_minus_prevalence": 0.2182506456,
+                "average_precision_over_prevalence": 1.9141819496,
+                "brier": 0.1602760155,
+                "brier_improvement_vs_train_prevalence": 0.0214701592,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.054792536,
+                "lift_at_budget": 2.1853978671,
+                "precision_at_budget": 0.5217391304,
+                "precision_attention": 0.4415584416,
+                "recall_at_budget": 0.2264150943,
+                "recall_attention": 0.641509434,
+                "threshold": 0.2809905631
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.3708333333,
+                  "history_to_test_affected_rows": 89,
+                  "history_to_test_shared_groups": 84,
+                  "train_to_test_affected_row_share": 0.3333333333,
+                  "train_to_test_affected_rows": 80,
+                  "train_to_test_shared_groups": 75
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 71,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 71
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.3708333333,
+                  "history_to_test_affected_rows": 89,
+                  "history_to_test_shared_groups": 84,
+                  "train_to_test_affected_row_share": 0.3333333333,
+                  "train_to_test_affected_rows": 80,
+                  "train_to_test_shared_groups": 75
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9791666667,
+                  "history_to_test_affected_rows": 235,
+                  "history_to_test_shared_groups": 173,
+                  "train_to_test_affected_row_share": 0.95,
+                  "train_to_test_affected_rows": 228,
+                  "train_to_test_shared_groups": 168
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 0,
+                "future": 720,
+                "test": 240,
+                "train": 1200,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-04-20T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.7734227649,
+                      "mean": 1.12212481,
+                      "min": 0.8436412502,
+                      "runs": 20,
+                      "std": 0.1826772506
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.8211648893,
+                      "mean": 1.0289581624,
+                      "min": 0.3642329779,
+                      "runs": 20,
+                      "std": 0.3841751543
+                    },
+                    "roc_auc": {
+                      "max": 0.6584235793,
+                      "mean": 0.5138160098,
+                      "min": 0.4219604778,
+                      "runs": 20,
+                      "std": 0.0516625641
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.7734227649,
+                    "mean": 1.12212481,
+                    "min": 0.8436412502,
+                    "runs": 20,
+                    "std": 0.1826772506
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.8211648893,
+                    "mean": 1.0289581624,
+                    "min": 0.3642329779,
+                    "runs": 20,
+                    "std": 0.3841751543
+                  },
+                  "roc_auc": {
+                    "max": 0.6584235793,
+                    "mean": 0.5138160098,
+                    "min": 0.4219604778,
+                    "runs": 20,
+                    "std": 0.0516625641
+                  }
+                }
+              },
+              "test_start": "2025-12-21T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-08-22T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2025-12-20T12:00:00+00:00",
+                  "min": "2025-08-23T00:00:00+00:00"
+                }
+              },
+              "window": 1
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.2482228204,
+                  "brier": 0.3212032504,
+                  "lift_at_budget": 1.2748154225,
+                  "recall_at_budget": 0.1320754717
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2387387387,
+                  "brier": 0.1817426137,
+                  "test_attention_prevalence": 0.2387387387,
+                  "train_prevalence": 0.2389843167
+                }
+              },
+              "embargo_raw_rows_excluded": 0,
+              "full_time_bounds": {
+                "embargo": null,
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-12-20T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 480,
+              "label_availability_cutoff": "2026-04-20T00:00:00+00:00",
+              "label_delay_days": 0,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1339,
+                "validation": 222
+              },
+              "model": {
+                "attention_prevalence": 0.2387387387,
+                "average_precision_attention": 0.5229052927,
+                "average_precision_minus_prevalence": 0.284166554,
+                "average_precision_over_prevalence": 2.1902825468,
+                "brier": 0.1573492096,
+                "brier_improvement_vs_train_prevalence": 0.024393404,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0597404721,
+                "lift_at_budget": 2.7317473339,
+                "precision_at_budget": 0.652173913,
+                "precision_attention": 0.5714285714,
+                "recall_at_budget": 0.2830188679,
+                "recall_attention": 0.3773584906,
+                "threshold": 0.3294891214
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.1958333333,
+                  "history_to_test_affected_rows": 47,
+                  "history_to_test_shared_groups": 42,
+                  "train_to_test_affected_row_share": 0.1791666667,
+                  "train_to_test_affected_rows": 43,
+                  "train_to_test_shared_groups": 38
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 70,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 70
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.1958333333,
+                  "history_to_test_affected_rows": 47,
+                  "history_to_test_shared_groups": 42,
+                  "train_to_test_affected_row_share": 0.1791666667,
+                  "train_to_test_affected_rows": 43,
+                  "train_to_test_shared_groups": 38
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.975,
+                  "history_to_test_affected_rows": 234,
+                  "history_to_test_shared_groups": 181,
+                  "train_to_test_affected_row_share": 0.9708333333,
+                  "train_to_test_affected_rows": 233,
+                  "train_to_test_shared_groups": 180
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 0,
+                "future": 480,
+                "test": 240,
+                "train": 1440,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-08-18T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.2743986078,
+                      "mean": 1.0330194768,
+                      "min": 0.852554336,
+                      "runs": 20,
+                      "std": 0.1181677074
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.4569319114,
+                      "mean": 0.9652173913,
+                      "min": 0.1821164889,
+                      "runs": 20,
+                      "std": 0.4011787574
+                    },
+                    "roc_auc": {
+                      "max": 0.5994752707,
+                      "mean": 0.4834598638,
+                      "min": 0.4006363738,
+                      "runs": 20,
+                      "std": 0.0528794171
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.2743986078,
+                    "mean": 1.0330194768,
+                    "min": 0.852554336,
+                    "runs": 20,
+                    "std": 0.1181677074
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.4569319114,
+                    "mean": 0.9652173913,
+                    "min": 0.1821164889,
+                    "runs": 20,
+                    "std": 0.4011787574
+                  },
+                  "roc_auc": {
+                    "max": 0.5994752707,
+                    "mean": 0.4834598638,
+                    "min": 0.4006363738,
+                    "runs": 20,
+                    "std": 0.0528794171
+                  }
+                }
+              },
+              "test_start": "2026-04-20T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-12-20T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                }
+              },
+              "window": 2
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.3014097022,
+                  "brier": 0.3430050707,
+                  "lift_at_budget": 0.5288862418,
+                  "recall_at_budget": 0.0547945205
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.3288288288,
+                  "brier": 0.2287787434,
+                  "test_attention_prevalence": 0.3288288288,
+                  "train_prevalence": 0.2389493914
+                }
+              },
+              "embargo_raw_rows_excluded": 0,
+              "full_time_bounds": {
+                "embargo": null,
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 240,
+              "label_availability_cutoff": "2026-08-18T00:00:00+00:00",
+              "label_delay_days": 0,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1561,
+                "validation": 222
+              },
+              "model": {
+                "attention_prevalence": 0.3288288288,
+                "average_precision_attention": 0.5014568513,
+                "average_precision_minus_prevalence": 0.1726280225,
+                "average_precision_over_prevalence": 1.5249783697,
+                "brier": 0.2067624959,
+                "brier_improvement_vs_train_prevalence": 0.0220162475,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.077919026,
+                "lift_at_budget": 1.454437165,
+                "precision_at_budget": 0.4782608696,
+                "precision_attention": 0.4827586207,
+                "recall_at_budget": 0.1506849315,
+                "recall_attention": 0.5753424658,
+                "threshold": 0.2386668592
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2375,
+                  "history_to_test_affected_rows": 57,
+                  "history_to_test_shared_groups": 52,
+                  "train_to_test_affected_row_share": 0.1875,
+                  "train_to_test_affected_rows": 45,
+                  "train_to_test_shared_groups": 40
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 71,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 71
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2375,
+                  "history_to_test_affected_rows": 57,
+                  "history_to_test_shared_groups": 52,
+                  "train_to_test_affected_row_share": 0.1875,
+                  "train_to_test_affected_rows": 45,
+                  "train_to_test_shared_groups": 40
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9708333333,
+                  "history_to_test_affected_rows": 233,
+                  "history_to_test_shared_groups": 177,
+                  "train_to_test_affected_row_share": 0.9625,
+                  "train_to_test_affected_rows": 231,
+                  "train_to_test_shared_groups": 176
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 0,
+                "future": 240,
+                "test": 240,
+                "train": 1680,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-12-16T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.2733288458,
+                      "mean": 1.0584170003,
+                      "min": 0.9056490986,
+                      "runs": 20,
+                      "std": 0.1046648547
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.3222156045,
+                      "mean": 0.8991066111,
+                      "min": 0.2644431209,
+                      "runs": 20,
+                      "std": 0.2373018855
+                    },
+                    "roc_auc": {
+                      "max": 0.5944653857,
+                      "mean": 0.5157143514,
+                      "min": 0.4372069504,
+                      "runs": 20,
+                      "std": 0.0444287407
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.2733288458,
+                    "mean": 1.0584170003,
+                    "min": 0.9056490986,
+                    "runs": 20,
+                    "std": 0.1046648547
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.3222156045,
+                    "mean": 0.8991066111,
+                    "min": 0.2644431209,
+                    "runs": 20,
+                    "std": 0.2373018855
+                  },
+                  "roc_auc": {
+                    "max": 0.5944653857,
+                    "mean": 0.5157143514,
+                    "min": 0.4372069504,
+                    "runs": 20,
+                    "std": 0.0444287407
+                  }
+                }
+              },
+              "test_start": "2026-08-18T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                }
+              },
+              "window": 3
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.3288246659,
+                  "brier": 0.3328142365,
+                  "lift_at_budget": 1.2040133779,
+                  "recall_at_budget": 0.1230769231
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2888888889,
+                  "brier": 0.2079286725,
+                  "test_attention_prevalence": 0.2888888889,
+                  "train_prevalence": 0.2389231632
+                }
+              },
+              "embargo_raw_rows_excluded": 0,
+              "full_time_bounds": {
+                "embargo": null,
+                "future": null,
+                "test": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 0,
+              "label_availability_cutoff": "2026-12-16T00:00:00+00:00",
+              "label_delay_days": 0,
+              "labeled_partition_rows": {
+                "test": 225,
+                "train": 1783,
+                "validation": 222
+              },
+              "model": {
+                "attention_prevalence": 0.2888888889,
+                "average_precision_attention": 0.5058067864,
+                "average_precision_minus_prevalence": 0.2169178976,
+                "average_precision_over_prevalence": 1.7508696454,
+                "brier": 0.1815033523,
+                "brier_improvement_vs_train_prevalence": 0.0264253202,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 2,
+                "budget_cutoff_tied_weight": 2.0,
+                "ece_10_bins": 0.0684266367,
+                "lift_at_budget": 2.1070234114,
+                "precision_at_budget": 0.6086956522,
+                "precision_attention": 0.5344827586,
+                "recall_at_budget": 0.2153846154,
+                "recall_attention": 0.4769230769,
+                "threshold": 0.3235312513
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2,
+                  "history_to_test_affected_rows": 48,
+                  "history_to_test_shared_groups": 46,
+                  "train_to_test_affected_row_share": 0.1625,
+                  "train_to_test_affected_rows": 39,
+                  "train_to_test_shared_groups": 37
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 66,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 66
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2,
+                  "history_to_test_affected_rows": 48,
+                  "history_to_test_shared_groups": 46,
+                  "train_to_test_affected_row_share": 0.1625,
+                  "train_to_test_affected_rows": 39,
+                  "train_to_test_shared_groups": 37
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9875,
+                  "history_to_test_affected_rows": 237,
+                  "history_to_test_shared_groups": 180,
+                  "train_to_test_affected_row_share": 0.9791666667,
+                  "train_to_test_affected_rows": 235,
+                  "train_to_test_shared_groups": 178
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 0,
+                "future": 0,
+                "test": 240,
+                "train": 1920,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": null,
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.1808164311,
+                      "mean": 1.0406521881,
+                      "min": 0.8919087153,
+                      "runs": 20,
+                      "std": 0.0976232891
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.5050167224,
+                      "mean": 0.9933110368,
+                      "min": 0.4515050167,
+                      "runs": 20,
+                      "std": 0.3064979921
+                    },
+                    "roc_auc": {
+                      "max": 0.5707211538,
+                      "mean": 0.4997451923,
+                      "min": 0.4450961538,
+                      "runs": 20,
+                      "std": 0.0332386589
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.1808164311,
+                    "mean": 1.0406521881,
+                    "min": 0.8919087153,
+                    "runs": 20,
+                    "std": 0.0976232891
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.5050167224,
+                    "mean": 0.9933110368,
+                    "min": 0.4515050167,
+                    "runs": 20,
+                    "std": 0.3064979921
+                  },
+                  "roc_auc": {
+                    "max": 0.5707211538,
+                    "mean": 0.4997451923,
+                    "min": 0.4450961538,
+                    "runs": 20,
+                    "std": 0.0332386589
+                  }
+                }
+              },
+              "test_start": "2026-12-16T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                }
+              },
+              "window": 4
+            }
+          ]
+        },
+        "14": {
+          "all_test_horizons_match_zero_day": true,
+          "authored_sensitivity_only": true,
+          "label_delay_days": 14,
+          "summary": {
+            "all_partitions_strictly_time_ordered": true,
+            "all_test_horizons_non_overlapping": true,
+            "all_training_histories_expanding": true,
+            "metric_ranges": {
+              "attention_prevalence": {
+                "max": 0.3288288288,
+                "mean": 0.2737987988,
+                "min": 0.2387387387,
+                "runs": 4,
+                "std": 0.0436441315
+              },
+              "average_precision_attention": {
+                "max": 0.5256869744,
+                "mean": 0.4991717909,
+                "min": 0.44935792,
+                "runs": 4,
+                "std": 0.0360315826
+              },
+              "average_precision_minus_prevalence": {
+                "max": 0.2868968098,
+                "mean": 0.2253729921,
+                "min": 0.167177892,
+                "runs": 4,
+                "std": 0.0500668137
+              },
+              "average_precision_over_prevalence": {
+                "max": 2.2017187126,
+                "mean": 1.8530061467,
+                "min": 1.5084040002,
+                "runs": 4,
+                "std": 0.2842033153
+              },
+              "brier": {
+                "max": 0.2069144231,
+                "mean": 0.1762492756,
+                "min": 0.1575085806,
+                "runs": 4,
+                "std": 0.022670567
+              },
+              "brier_improvement_vs_train_prevalence": {
+                "max": 0.0281773567,
+                "mean": 0.0237141866,
+                "min": 0.0209249781,
+                "runs": 4,
+                "std": 0.003305772
+              },
+              "lift_at_budget": {
+                "max": 2.549630845,
+                "mean": 2.0285931999,
+                "min": 1.454437165,
+                "runs": 4,
+                "std": 0.450158256
+              },
+              "recall_at_budget": {
+                "max": 0.2641509434,
+                "mean": 0.209441915,
+                "min": 0.1506849315,
+                "runs": 4,
+                "std": 0.0464914567
+              }
+            },
+            "range_interpretation": "descriptive variation across correlated synthetic rolling origins, not a confidence interval",
+            "test_label_alignment_placebo_gate": {
+              "draws": 80,
+              "enforced": true,
+              "passed": true,
+              "summary": {
+                "average_precision_over_prevalence": {
+                  "max": 1.7861281619,
+                  "mean": 1.0634543771,
+                  "min": 0.8398889862,
+                  "runs": 80,
+                  "std": 0.1319273186
+                },
+                "lift_at_10pct_budget": {
+                  "max": 1.8211648893,
+                  "mean": 0.9829789745,
+                  "min": 0.1821164889,
+                  "runs": 80,
+                  "std": 0.3449402318
+                },
+                "roc_auc": {
+                  "max": 0.6571954896,
+                  "mean": 0.5018590447,
+                  "min": 0.3967288155,
+                  "runs": 80,
+                  "std": 0.0467427007
+                }
+              },
+              "thresholds_for_aggregate_mean": {
+                "average_precision_over_prevalence": [
+                  0.8,
+                  1.3
+                ],
+                "lift_at_10pct_budget": [
+                  0.75,
+                  1.35
+                ],
+                "roc_auc": [
+                  0.45,
+                  0.55
+                ]
+              }
+            },
+            "windows": 4
+          },
+          "windows": [
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.2528725685,
+                  "brier": 0.3365359418,
+                  "lift_at_budget": 1.0926989336,
+                  "recall_at_budget": 0.1132075472
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2387387387,
+                  "brier": 0.1817462305,
+                  "test_attention_prevalence": 0.2387387387,
+                  "train_prevalence": 0.2406563355
+                }
+              },
+              "embargo_raw_rows_excluded": 28,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2025-12-20T12:00:00+00:00",
+                  "min": "2025-12-07T00:00:00+00:00"
+                },
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-08-08T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2025-12-06T12:00:00+00:00",
+                  "min": "2025-08-09T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 720,
+              "label_availability_cutoff": "2025-12-07T00:00:00+00:00",
+              "label_delay_days": 14,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1097,
+                "validation": 219
+              },
+              "model": {
+                "attention_prevalence": 0.2387387387,
+                "average_precision_attention": 0.44935792,
+                "average_precision_minus_prevalence": 0.2106191813,
+                "average_precision_over_prevalence": 1.8822161933,
+                "brier": 0.1608212524,
+                "brier_improvement_vs_train_prevalence": 0.0209249781,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0525407083,
+                "lift_at_budget": 2.0032813782,
+                "precision_at_budget": 0.4782608696,
+                "precision_attention": 0.4415584416,
+                "recall_at_budget": 0.2075471698,
+                "recall_attention": 0.641509434,
+                "threshold": 0.2751269549
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.3708333333,
+                  "history_to_test_affected_rows": 89,
+                  "history_to_test_shared_groups": 84,
+                  "train_to_test_affected_row_share": 0.3208333333,
+                  "train_to_test_affected_rows": 77,
+                  "train_to_test_shared_groups": 72
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 71,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 71
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.3708333333,
+                  "history_to_test_affected_rows": 89,
+                  "history_to_test_shared_groups": 84,
+                  "train_to_test_affected_row_share": 0.3208333333,
+                  "train_to_test_affected_rows": 77,
+                  "train_to_test_shared_groups": 72
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9791666667,
+                  "history_to_test_affected_rows": 235,
+                  "history_to_test_shared_groups": 173,
+                  "train_to_test_affected_row_share": 0.9416666667,
+                  "train_to_test_affected_rows": 226,
+                  "train_to_test_shared_groups": 167
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 28,
+                "future": 720,
+                "test": 240,
+                "train": 1172,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-04-20T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.7861281619,
+                      "mean": 1.1208123476,
+                      "min": 0.8398889862,
+                      "runs": 20,
+                      "std": 0.1845671371
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.8211648893,
+                      "mean": 1.0471698113,
+                      "min": 0.3642329779,
+                      "runs": 20,
+                      "std": 0.3684025836
+                    },
+                    "roc_auc": {
+                      "max": 0.6571954896,
+                      "mean": 0.5118678129,
+                      "min": 0.4207323881,
+                      "runs": 20,
+                      "std": 0.0513584877
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.7861281619,
+                    "mean": 1.1208123476,
+                    "min": 0.8398889862,
+                    "runs": 20,
+                    "std": 0.1845671371
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.8211648893,
+                    "mean": 1.0471698113,
+                    "min": 0.3642329779,
+                    "runs": 20,
+                    "std": 0.3684025836
+                  },
+                  "roc_auc": {
+                    "max": 0.6571954896,
+                    "mean": 0.5118678129,
+                    "min": 0.4207323881,
+                    "runs": 20,
+                    "std": 0.0513584877
+                  }
+                }
+              },
+              "test_start": "2025-12-21T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-08-08T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2025-12-06T12:00:00+00:00",
+                  "min": "2025-08-09T00:00:00+00:00"
+                }
+              },
+              "window": 1
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.2482228204,
+                  "brier": 0.3212032504,
+                  "lift_at_budget": 1.2748154225,
+                  "recall_at_budget": 0.1320754717
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2387387387,
+                  "brier": 0.1817429414,
+                  "test_attention_prevalence": 0.2387387387,
+                  "train_prevalence": 0.2393617021
+                }
+              },
+              "embargo_raw_rows_excluded": 28,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2026-04-06T00:00:00+00:00"
+                },
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-12-06T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-04-05T12:00:00+00:00",
+                  "min": "2025-12-07T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 480,
+              "label_availability_cutoff": "2026-04-06T00:00:00+00:00",
+              "label_delay_days": 14,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1316,
+                "validation": 220
+              },
+              "model": {
+                "attention_prevalence": 0.2387387387,
+                "average_precision_attention": 0.5256355485,
+                "average_precision_minus_prevalence": 0.2868968098,
+                "average_precision_over_prevalence": 2.2017187126,
+                "brier": 0.1575085806,
+                "brier_improvement_vs_train_prevalence": 0.0242343609,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0667750352,
+                "lift_at_budget": 2.549630845,
+                "precision_at_budget": 0.6086956522,
+                "precision_attention": 0.575,
+                "recall_at_budget": 0.2641509434,
+                "recall_attention": 0.4339622642,
+                "threshold": 0.3206794572
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.1958333333,
+                  "history_to_test_affected_rows": 47,
+                  "history_to_test_shared_groups": 42,
+                  "train_to_test_affected_row_share": 0.1791666667,
+                  "train_to_test_affected_rows": 43,
+                  "train_to_test_shared_groups": 38
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 70,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 70
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.1958333333,
+                  "history_to_test_affected_rows": 47,
+                  "history_to_test_shared_groups": 42,
+                  "train_to_test_affected_row_share": 0.1791666667,
+                  "train_to_test_affected_rows": 43,
+                  "train_to_test_shared_groups": 38
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.975,
+                  "history_to_test_affected_rows": 234,
+                  "history_to_test_shared_groups": 181,
+                  "train_to_test_affected_row_share": 0.9708333333,
+                  "train_to_test_affected_rows": 233,
+                  "train_to_test_shared_groups": 180
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 28,
+                "future": 480,
+                "test": 240,
+                "train": 1412,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-08-18T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.2510986231,
+                      "mean": 1.0322052336,
+                      "min": 0.8459453975,
+                      "runs": 20,
+                      "std": 0.1192746702
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.6390484003,
+                      "mean": 0.9743232158,
+                      "min": 0.1821164889,
+                      "runs": 20,
+                      "std": 0.4105335053
+                    },
+                    "roc_auc": {
+                      "max": 0.5919950876,
+                      "mean": 0.4826225299,
+                      "min": 0.3967288155,
+                      "runs": 20,
+                      "std": 0.0535279566
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.2510986231,
+                    "mean": 1.0322052336,
+                    "min": 0.8459453975,
+                    "runs": 20,
+                    "std": 0.1192746702
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.6390484003,
+                    "mean": 0.9743232158,
+                    "min": 0.1821164889,
+                    "runs": 20,
+                    "std": 0.4105335053
+                  },
+                  "roc_auc": {
+                    "max": 0.5919950876,
+                    "mean": 0.4826225299,
+                    "min": 0.3967288155,
+                    "runs": 20,
+                    "std": 0.0535279566
+                  }
+                }
+              },
+              "test_start": "2026-04-20T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-12-06T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-04-05T12:00:00+00:00",
+                  "min": "2025-12-07T00:00:00+00:00"
+                }
+              },
+              "window": 2
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.3014097022,
+                  "brier": 0.3430050707,
+                  "lift_at_budget": 0.5288862418,
+                  "recall_at_budget": 0.0547945205
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.3288288288,
+                  "brier": 0.2284344739,
+                  "test_attention_prevalence": 0.3288288288,
+                  "train_prevalence": 0.2408854167
+                }
+              },
+              "embargo_raw_rows_excluded": 28,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-08-04T00:00:00+00:00"
+                },
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-04-05T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-08-03T12:00:00+00:00",
+                  "min": "2026-04-06T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 240,
+              "label_availability_cutoff": "2026-08-04T00:00:00+00:00",
+              "label_delay_days": 14,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1536,
+                "validation": 222
+              },
+              "model": {
+                "attention_prevalence": 0.3288288288,
+                "average_precision_attention": 0.4960067208,
+                "average_precision_minus_prevalence": 0.167177892,
+                "average_precision_over_prevalence": 1.5084040002,
+                "brier": 0.2069144231,
+                "brier_improvement_vs_train_prevalence": 0.0215200508,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0840807188,
+                "lift_at_budget": 1.454437165,
+                "precision_at_budget": 0.4782608696,
+                "precision_attention": 0.5113636364,
+                "recall_at_budget": 0.1506849315,
+                "recall_attention": 0.6164383562,
+                "threshold": 0.2366554474
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2375,
+                  "history_to_test_affected_rows": 57,
+                  "history_to_test_shared_groups": 52,
+                  "train_to_test_affected_row_share": 0.1875,
+                  "train_to_test_affected_rows": 45,
+                  "train_to_test_shared_groups": 40
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 71,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 71
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2375,
+                  "history_to_test_affected_rows": 57,
+                  "history_to_test_shared_groups": 52,
+                  "train_to_test_affected_row_share": 0.1875,
+                  "train_to_test_affected_rows": 45,
+                  "train_to_test_shared_groups": 40
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9708333333,
+                  "history_to_test_affected_rows": 233,
+                  "history_to_test_shared_groups": 177,
+                  "train_to_test_affected_row_share": 0.9583333333,
+                  "train_to_test_affected_rows": 230,
+                  "train_to_test_shared_groups": 175
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 28,
+                "future": 240,
+                "test": 240,
+                "train": 1652,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-12-16T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.259628199,
+                      "mean": 1.0593608703,
+                      "min": 0.9165115589,
+                      "runs": 20,
+                      "std": 0.1001346782
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.454437165,
+                      "mean": 0.9321620012,
+                      "min": 0.2644431209,
+                      "runs": 20,
+                      "std": 0.2555063381
+                    },
+                    "roc_auc": {
+                      "max": 0.5937298888,
+                      "mean": 0.5154891055,
+                      "min": 0.4396892526,
+                      "runs": 20,
+                      "std": 0.0442003661
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.259628199,
+                    "mean": 1.0593608703,
+                    "min": 0.9165115589,
+                    "runs": 20,
+                    "std": 0.1001346782
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.454437165,
+                    "mean": 0.9321620012,
+                    "min": 0.2644431209,
+                    "runs": 20,
+                    "std": 0.2555063381
+                  },
+                  "roc_auc": {
+                    "max": 0.5937298888,
+                    "mean": 0.5154891055,
+                    "min": 0.4396892526,
+                    "runs": 20,
+                    "std": 0.0442003661
+                  }
+                }
+              },
+              "test_start": "2026-08-18T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-04-05T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-08-03T12:00:00+00:00",
+                  "min": "2026-04-06T00:00:00+00:00"
+                }
+              },
+              "window": 3
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.3288246659,
+                  "brier": 0.3328142365,
+                  "lift_at_budget": 1.2040133779,
+                  "recall_at_budget": 0.1230769231
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2888888889,
+                  "brier": 0.207930203,
+                  "test_attention_prevalence": 0.2888888889,
+                  "train_prevalence": 0.2389078498
+                }
+              },
+              "embargo_raw_rows_excluded": 28,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-12-02T00:00:00+00:00"
+                },
+                "future": null,
+                "test": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-08-03T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-12-01T12:00:00+00:00",
+                  "min": "2026-08-04T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 0,
+              "label_availability_cutoff": "2026-12-02T00:00:00+00:00",
+              "label_delay_days": 14,
+              "labeled_partition_rows": {
+                "test": 225,
+                "train": 1758,
+                "validation": 222
+              },
+              "model": {
+                "attention_prevalence": 0.2888888889,
+                "average_precision_attention": 0.5256869744,
+                "average_precision_minus_prevalence": 0.2367980855,
+                "average_precision_over_prevalence": 1.8196856807,
+                "brier": 0.1797528463,
+                "brier_improvement_vs_train_prevalence": 0.0281773567,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0593866468,
+                "lift_at_budget": 2.1070234114,
+                "precision_at_budget": 0.6086956522,
+                "precision_attention": 0.4939759036,
+                "recall_at_budget": 0.2153846154,
+                "recall_attention": 0.6307692308,
+                "threshold": 0.2364826117
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2,
+                  "history_to_test_affected_rows": 48,
+                  "history_to_test_shared_groups": 46,
+                  "train_to_test_affected_row_share": 0.1625,
+                  "train_to_test_affected_rows": 39,
+                  "train_to_test_shared_groups": 37
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 66,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 66
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2,
+                  "history_to_test_affected_rows": 48,
+                  "history_to_test_shared_groups": 46,
+                  "train_to_test_affected_row_share": 0.1625,
+                  "train_to_test_affected_rows": 39,
+                  "train_to_test_shared_groups": 37
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9875,
+                  "history_to_test_affected_rows": 237,
+                  "history_to_test_shared_groups": 180,
+                  "train_to_test_affected_row_share": 0.9791666667,
+                  "train_to_test_affected_rows": 235,
+                  "train_to_test_shared_groups": 178
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 28,
+                "future": 0,
+                "test": 240,
+                "train": 1892,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": null,
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.193025285,
+                      "mean": 1.0414390567,
+                      "min": 0.9014762724,
+                      "runs": 20,
+                      "std": 0.0950271119
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.6555183946,
+                      "mean": 0.9782608696,
+                      "min": 0.4515050167,
+                      "runs": 20,
+                      "std": 0.3435438056
+                    },
+                    "roc_auc": {
+                      "max": 0.5632211538,
+                      "mean": 0.4974567308,
+                      "min": 0.4474038462,
+                      "runs": 20,
+                      "std": 0.0302814878
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.193025285,
+                    "mean": 1.0414390567,
+                    "min": 0.9014762724,
+                    "runs": 20,
+                    "std": 0.0950271119
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.6555183946,
+                    "mean": 0.9782608696,
+                    "min": 0.4515050167,
+                    "runs": 20,
+                    "std": 0.3435438056
+                  },
+                  "roc_auc": {
+                    "max": 0.5632211538,
+                    "mean": 0.4974567308,
+                    "min": 0.4474038462,
+                    "runs": 20,
+                    "std": 0.0302814878
+                  }
+                }
+              },
+              "test_start": "2026-12-16T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-08-03T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-12-01T12:00:00+00:00",
+                  "min": "2026-08-04T00:00:00+00:00"
+                }
+              },
+              "window": 4
+            }
+          ]
+        },
+        "30": {
+          "all_test_horizons_match_zero_day": true,
+          "authored_sensitivity_only": true,
+          "label_delay_days": 30,
+          "summary": {
+            "all_partitions_strictly_time_ordered": true,
+            "all_test_horizons_non_overlapping": true,
+            "all_training_histories_expanding": true,
+            "metric_ranges": {
+              "attention_prevalence": {
+                "max": 0.3288288288,
+                "mean": 0.2737987988,
+                "min": 0.2387387387,
+                "runs": 4,
+                "std": 0.0436441315
+              },
+              "average_precision_attention": {
+                "max": 0.5227435018,
+                "mean": 0.4881250805,
+                "min": 0.4514401141,
+                "runs": 4,
+                "std": 0.0313697537
+              },
+              "average_precision_minus_prevalence": {
+                "max": 0.2840047631,
+                "mean": 0.2143262817,
+                "min": 0.1745742982,
+                "runs": 4,
+                "std": 0.0491220635
+              },
+              "average_precision_over_prevalence": {
+                "max": 2.1896048566,
+                "mean": 1.8138428734,
+                "min": 1.5308971808,
+                "runs": 4,
+                "std": 0.2921579484
+              },
+              "brier": {
+                "max": 0.2062832681,
+                "mean": 0.1770770489,
+                "min": 0.1571081755,
+                "runs": 4,
+                "std": 0.0230659497
+              },
+              "brier_improvement_vs_train_prevalence": {
+                "max": 0.0246349609,
+                "mean": 0.0228309692,
+                "min": 0.0215674958,
+                "runs": 4,
+                "std": 0.0013387708
+              },
+              "lift_at_budget": {
+                "max": 2.7317473339,
+                "mean": 2.0695522942,
+                "min": 1.5866587254,
+                "runs": 4,
+                "std": 0.479185493
+              },
+              "recall_at_budget": {
+                "max": 0.2830188679,
+                "mean": 0.2137373998,
+                "min": 0.1643835616,
+                "runs": 4,
+                "std": 0.0498757064
+              }
+            },
+            "range_interpretation": "descriptive variation across correlated synthetic rolling origins, not a confidence interval",
+            "test_label_alignment_placebo_gate": {
+              "draws": 80,
+              "enforced": true,
+              "passed": true,
+              "summary": {
+                "average_precision_over_prevalence": {
+                  "max": 1.7487241362,
+                  "mean": 1.0621879169,
+                  "min": 0.8342577928,
+                  "runs": 80,
+                  "std": 0.128520196
+                },
+                "lift_at_10pct_budget": {
+                  "max": 1.6555183946,
+                  "mean": 0.9720434856,
+                  "min": 0.1821164889,
+                  "runs": 80,
+                  "std": 0.3264063597
+                },
+                "roc_auc": {
+                  "max": 0.6586468684,
+                  "mean": 0.5020887719,
+                  "min": 0.3987384169,
+                  "runs": 80,
+                  "std": 0.0472392543
+                }
+              },
+              "thresholds_for_aggregate_mean": {
+                "average_precision_over_prevalence": [
+                  0.8,
+                  1.3
+                ],
+                "lift_at_10pct_budget": [
+                  0.75,
+                  1.35
+                ],
+                "roc_auc": [
+                  0.45,
+                  0.55
+                ]
+              }
+            },
+            "windows": 4
+          },
+          "windows": [
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.2528725685,
+                  "brier": 0.3365359418,
+                  "lift_at_budget": 1.0926989336,
+                  "recall_at_budget": 0.1132075472
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2387387387,
+                  "brier": 0.1817439606,
+                  "test_attention_prevalence": 0.2387387387,
+                  "train_prevalence": 0.2399250234
+                }
+              },
+              "embargo_raw_rows_excluded": 60,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2025-12-20T12:00:00+00:00",
+                  "min": "2025-11-21T00:00:00+00:00"
+                },
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-07-23T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2025-11-20T12:00:00+00:00",
+                  "min": "2025-07-24T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 720,
+              "label_availability_cutoff": "2025-11-21T00:00:00+00:00",
+              "label_delay_days": 30,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1067,
+                "validation": 219
+              },
+              "model": {
+                "attention_prevalence": 0.2387387387,
+                "average_precision_attention": 0.4514401141,
+                "average_precision_minus_prevalence": 0.2127013753,
+                "average_precision_over_prevalence": 1.8909378363,
+                "brier": 0.1601764649,
+                "brier_improvement_vs_train_prevalence": 0.0215674958,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0534551321,
+                "lift_at_budget": 2.0032813782,
+                "precision_at_budget": 0.4782608696,
+                "precision_attention": 0.4761904762,
+                "recall_at_budget": 0.2075471698,
+                "recall_attention": 0.5660377358,
+                "threshold": 0.32178954
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.3708333333,
+                  "history_to_test_affected_rows": 89,
+                  "history_to_test_shared_groups": 84,
+                  "train_to_test_affected_row_share": 0.3125,
+                  "train_to_test_affected_rows": 75,
+                  "train_to_test_shared_groups": 71
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 71,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 71
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.3708333333,
+                  "history_to_test_affected_rows": 89,
+                  "history_to_test_shared_groups": 84,
+                  "train_to_test_affected_row_share": 0.3125,
+                  "train_to_test_affected_rows": 75,
+                  "train_to_test_shared_groups": 71
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9791666667,
+                  "history_to_test_affected_rows": 235,
+                  "history_to_test_shared_groups": 173,
+                  "train_to_test_affected_row_share": 0.9416666667,
+                  "train_to_test_affected_rows": 226,
+                  "train_to_test_shared_groups": 167
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 60,
+                "future": 720,
+                "test": 240,
+                "train": 1140,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-04-20T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.7487241362,
+                      "mean": 1.1153630511,
+                      "min": 0.8342577928,
+                      "runs": 20,
+                      "std": 0.1758183385
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.6390484003,
+                      "mean": 1.0380639869,
+                      "min": 0.5463494668,
+                      "runs": 20,
+                      "std": 0.3075899288
+                    },
+                    "roc_auc": {
+                      "max": 0.6586468684,
+                      "mean": 0.5113486658,
+                      "min": 0.4130289159,
+                      "runs": 20,
+                      "std": 0.0514786117
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.7487241362,
+                    "mean": 1.1153630511,
+                    "min": 0.8342577928,
+                    "runs": 20,
+                    "std": 0.1758183385
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.6390484003,
+                    "mean": 1.0380639869,
+                    "min": 0.5463494668,
+                    "runs": 20,
+                    "std": 0.3075899288
+                  },
+                  "roc_auc": {
+                    "max": 0.6586468684,
+                    "mean": 0.5113486658,
+                    "min": 0.4130289159,
+                    "runs": 20,
+                    "std": 0.0514786117
+                  }
+                }
+              },
+              "test_start": "2025-12-21T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2025-12-21T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-07-23T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2025-11-20T12:00:00+00:00",
+                  "min": "2025-07-24T00:00:00+00:00"
+                }
+              },
+              "window": 1
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.2482228204,
+                  "brier": 0.3212032504,
+                  "lift_at_budget": 1.2748154225,
+                  "recall_at_budget": 0.1320754717
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2387387387,
+                  "brier": 0.1817431364,
+                  "test_attention_prevalence": 0.2387387387,
+                  "train_prevalence": 0.2395023328
+                }
+              },
+              "embargo_raw_rows_excluded": 60,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2026-04-19T12:00:00+00:00",
+                  "min": "2026-03-21T00:00:00+00:00"
+                },
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-11-20T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-03-20T12:00:00+00:00",
+                  "min": "2025-11-21T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 480,
+              "label_availability_cutoff": "2026-03-21T00:00:00+00:00",
+              "label_delay_days": 30,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1286,
+                "validation": 220
+              },
+              "model": {
+                "attention_prevalence": 0.2387387387,
+                "average_precision_attention": 0.5227435018,
+                "average_precision_minus_prevalence": 0.2840047631,
+                "average_precision_over_prevalence": 2.1896048566,
+                "brier": 0.1571081755,
+                "brier_improvement_vs_train_prevalence": 0.0246349609,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0622204755,
+                "lift_at_budget": 2.7317473339,
+                "precision_at_budget": 0.652173913,
+                "precision_attention": 0.6176470588,
+                "recall_at_budget": 0.2830188679,
+                "recall_attention": 0.3962264151,
+                "threshold": 0.3356473825
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.1958333333,
+                  "history_to_test_affected_rows": 47,
+                  "history_to_test_shared_groups": 42,
+                  "train_to_test_affected_row_share": 0.1791666667,
+                  "train_to_test_affected_rows": 43,
+                  "train_to_test_shared_groups": 38
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 70,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 70
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.1958333333,
+                  "history_to_test_affected_rows": 47,
+                  "history_to_test_shared_groups": 42,
+                  "train_to_test_affected_row_share": 0.1791666667,
+                  "train_to_test_affected_rows": 43,
+                  "train_to_test_shared_groups": 38
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.975,
+                  "history_to_test_affected_rows": 234,
+                  "history_to_test_shared_groups": 181,
+                  "train_to_test_affected_row_share": 0.9708333333,
+                  "train_to_test_affected_rows": 233,
+                  "train_to_test_shared_groups": 180
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 60,
+                "future": 480,
+                "test": 240,
+                "train": 1380,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-08-18T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.2696845459,
+                      "mean": 1.03493672,
+                      "min": 0.851640486,
+                      "runs": 20,
+                      "std": 0.1186207795
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.4569319114,
+                      "mean": 0.9652173913,
+                      "min": 0.1821164889,
+                      "runs": 20,
+                      "std": 0.4011787574
+                    },
+                    "roc_auc": {
+                      "max": 0.5974656693,
+                      "mean": 0.4836775706,
+                      "min": 0.3987384169,
+                      "runs": 20,
+                      "std": 0.0529425057
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.2696845459,
+                    "mean": 1.03493672,
+                    "min": 0.851640486,
+                    "runs": 20,
+                    "std": 0.1186207795
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.4569319114,
+                    "mean": 0.9652173913,
+                    "min": 0.1821164889,
+                    "runs": 20,
+                    "std": 0.4011787574
+                  },
+                  "roc_auc": {
+                    "max": 0.5974656693,
+                    "mean": 0.4836775706,
+                    "min": 0.3987384169,
+                    "runs": 20,
+                    "std": 0.0529425057
+                  }
+                }
+              },
+              "test_start": "2026-04-20T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-04-20T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2025-11-20T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-03-20T12:00:00+00:00",
+                  "min": "2025-11-21T00:00:00+00:00"
+                }
+              },
+              "window": 2
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.3014097022,
+                  "brier": 0.3430050707,
+                  "lift_at_budget": 0.5288862418,
+                  "recall_at_budget": 0.0547945205
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.3288288288,
+                  "brier": 0.2284080361,
+                  "test_attention_prevalence": 0.3288288288,
+                  "train_prevalence": 0.2410358566
+                }
+              },
+              "embargo_raw_rows_excluded": 60,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2026-08-17T12:00:00+00:00",
+                  "min": "2026-07-19T00:00:00+00:00"
+                },
+                "future": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "test": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-03-20T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-07-18T12:00:00+00:00",
+                  "min": "2026-03-21T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 240,
+              "label_availability_cutoff": "2026-07-19T00:00:00+00:00",
+              "label_delay_days": 30,
+              "labeled_partition_rows": {
+                "test": 222,
+                "train": 1506,
+                "validation": 221
+              },
+              "model": {
+                "attention_prevalence": 0.3288288288,
+                "average_precision_attention": 0.503403127,
+                "average_precision_minus_prevalence": 0.1745742982,
+                "average_precision_over_prevalence": 1.5308971808,
+                "brier": 0.2062832681,
+                "brier_improvement_vs_train_prevalence": 0.022124768,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0794166741,
+                "lift_at_budget": 1.5866587254,
+                "precision_at_budget": 0.5217391304,
+                "precision_attention": 0.4363636364,
+                "recall_at_budget": 0.1643835616,
+                "recall_attention": 0.6575342466,
+                "threshold": 0.2177892744
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2375,
+                  "history_to_test_affected_rows": 57,
+                  "history_to_test_shared_groups": 52,
+                  "train_to_test_affected_row_share": 0.1875,
+                  "train_to_test_affected_rows": 45,
+                  "train_to_test_shared_groups": 40
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 71,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 71
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2375,
+                  "history_to_test_affected_rows": 57,
+                  "history_to_test_shared_groups": 52,
+                  "train_to_test_affected_row_share": 0.1875,
+                  "train_to_test_affected_rows": 45,
+                  "train_to_test_shared_groups": 40
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9708333333,
+                  "history_to_test_affected_rows": 233,
+                  "history_to_test_shared_groups": 177,
+                  "train_to_test_affected_row_share": 0.9583333333,
+                  "train_to_test_affected_rows": 230,
+                  "train_to_test_shared_groups": 175
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 60,
+                "future": 240,
+                "test": 240,
+                "train": 1620,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": "2026-12-16T00:00:00+00:00",
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.2633255463,
+                      "mean": 1.058939344,
+                      "min": 0.9058537525,
+                      "runs": 20,
+                      "std": 0.1011437393
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.3222156045,
+                      "mean": 0.8991066111,
+                      "min": 0.2644431209,
+                      "runs": 20,
+                      "std": 0.2170503339
+                    },
+                    "roc_auc": {
+                      "max": 0.5977751218,
+                      "mean": 0.5158384665,
+                      "min": 0.4262664338,
+                      "runs": 20,
+                      "std": 0.0457761186
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.2633255463,
+                    "mean": 1.058939344,
+                    "min": 0.9058537525,
+                    "runs": 20,
+                    "std": 0.1011437393
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.3222156045,
+                    "mean": 0.8991066111,
+                    "min": 0.2644431209,
+                    "runs": 20,
+                    "std": 0.2170503339
+                  },
+                  "roc_auc": {
+                    "max": 0.5977751218,
+                    "mean": 0.5158384665,
+                    "min": 0.4262664338,
+                    "runs": 20,
+                    "std": 0.0457761186
+                  }
+                }
+              },
+              "test_start": "2026-08-18T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-08-18T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-03-20T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-07-18T12:00:00+00:00",
+                  "min": "2026-03-21T00:00:00+00:00"
+                }
+              },
+              "window": 3
+            },
+            {
+              "actual_validation_raw_rows": 240,
+              "baselines": {
+                "seeded_random_score": {
+                  "average_precision_attention": 0.3288246659,
+                  "brier": 0.3328142365,
+                  "lift_at_budget": 1.2040133779,
+                  "recall_at_budget": 0.1230769231
+                },
+                "train_prevalence_probability": {
+                  "average_precision_attention": 0.2888888889,
+                  "brier": 0.2077369388,
+                  "test_attention_prevalence": 0.2888888889,
+                  "train_prevalence": 0.240880139
+                }
+              },
+              "embargo_raw_rows_excluded": 60,
+              "full_time_bounds": {
+                "embargo": {
+                  "max": "2026-12-15T12:00:00+00:00",
+                  "min": "2026-11-16T00:00:00+00:00"
+                },
+                "future": null,
+                "test": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-07-18T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-11-15T12:00:00+00:00",
+                  "min": "2026-07-19T00:00:00+00:00"
+                }
+              },
+              "future_raw_rows_excluded": 0,
+              "label_availability_cutoff": "2026-11-16T00:00:00+00:00",
+              "label_delay_days": 30,
+              "labeled_partition_rows": {
+                "test": 225,
+                "train": 1727,
+                "validation": 225
+              },
+              "model": {
+                "attention_prevalence": 0.2888888889,
+                "average_precision_attention": 0.474913579,
+                "average_precision_minus_prevalence": 0.1860246901,
+                "average_precision_over_prevalence": 1.6439316196,
+                "brier": 0.1847402869,
+                "brier_improvement_vs_train_prevalence": 0.022996652,
+                "budget_count": 23,
+                "budget_cutoff_fraction_selected": 1.0,
+                "budget_cutoff_tied_rows": 1,
+                "budget_cutoff_tied_weight": 1.0,
+                "ece_10_bins": 0.0457235901,
+                "lift_at_budget": 1.9565217391,
+                "precision_at_budget": 0.5652173913,
+                "precision_attention": 0.4868421053,
+                "recall_at_budget": 0.2,
+                "recall_attention": 0.5692307692,
+                "threshold": 0.2672453145
+              },
+              "model_seed": 61043,
+              "raw_cross_boundary_overlap_audit": {
+                "near_text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2,
+                  "history_to_test_affected_rows": 48,
+                  "history_to_test_shared_groups": 46,
+                  "train_to_test_affected_row_share": 0.1583333333,
+                  "train_to_test_affected_rows": 38,
+                  "train_to_test_shared_groups": 36
+                },
+                "product_group": {
+                  "history_to_test_affected_row_share": 1.0,
+                  "history_to_test_affected_rows": 240,
+                  "history_to_test_shared_groups": 66,
+                  "train_to_test_affected_row_share": 1.0,
+                  "train_to_test_affected_rows": 240,
+                  "train_to_test_shared_groups": 66
+                },
+                "text_fingerprint": {
+                  "history_to_test_affected_row_share": 0.2,
+                  "history_to_test_affected_rows": 48,
+                  "history_to_test_shared_groups": 46,
+                  "train_to_test_affected_row_share": 0.1583333333,
+                  "train_to_test_affected_rows": 38,
+                  "train_to_test_shared_groups": 36
+                },
+                "user_group": {
+                  "history_to_test_affected_row_share": 0.9875,
+                  "history_to_test_affected_rows": 237,
+                  "history_to_test_shared_groups": 180,
+                  "train_to_test_affected_row_share": 0.975,
+                  "train_to_test_affected_rows": 234,
+                  "train_to_test_shared_groups": 177
+                }
+              },
+              "raw_partition_rows": {
+                "embargo": 60,
+                "future": 0,
+                "test": 240,
+                "train": 1860,
+                "validation": 240
+              },
+              "target_validation_raw_rows": 240,
+              "test_end": null,
+              "test_label_alignment_placebo": {
+                "draws": 20,
+                "gate": {
+                  "draws": 20,
+                  "enforced": true,
+                  "passed": true,
+                  "summary": {
+                    "average_precision_over_prevalence": {
+                      "max": 1.1904241179,
+                      "mean": 1.0395125525,
+                      "min": 0.9046260061,
+                      "runs": 20,
+                      "std": 0.0956779754
+                    },
+                    "lift_at_10pct_budget": {
+                      "max": 1.6555183946,
+                      "mean": 0.9857859532,
+                      "min": 0.4515050167,
+                      "runs": 20,
+                      "std": 0.3603944898
+                    },
+                    "roc_auc": {
+                      "max": 0.5626442308,
+                      "mean": 0.4974903846,
+                      "min": 0.4548076923,
+                      "runs": 20,
+                      "std": 0.0325851931
+                    }
+                  },
+                  "thresholds_for_aggregate_mean": {
+                    "average_precision_over_prevalence": [
+                      0.8,
+                      1.3
+                    ],
+                    "lift_at_10pct_budget": [
+                      0.75,
+                      1.35
+                    ],
+                    "roc_auc": [
+                      0.45,
+                      0.55
+                    ]
+                  }
+                },
+                "summary": {
+                  "average_precision_over_prevalence": {
+                    "max": 1.1904241179,
+                    "mean": 1.0395125525,
+                    "min": 0.9046260061,
+                    "runs": 20,
+                    "std": 0.0956779754
+                  },
+                  "lift_at_10pct_budget": {
+                    "max": 1.6555183946,
+                    "mean": 0.9857859532,
+                    "min": 0.4515050167,
+                    "runs": 20,
+                    "std": 0.3603944898
+                  },
+                  "roc_auc": {
+                    "max": 0.5626442308,
+                    "mean": 0.4974903846,
+                    "min": 0.4548076923,
+                    "runs": 20,
+                    "std": 0.0325851931
+                  }
+                }
+              },
+              "test_start": "2026-12-16T00:00:00+00:00",
+              "time_bounds": {
+                "test": {
+                  "max": "2027-04-14T12:00:00+00:00",
+                  "min": "2026-12-16T00:00:00+00:00"
+                },
+                "train": {
+                  "max": "2026-07-18T12:00:00+00:00",
+                  "min": "2024-01-01T00:00:00+00:00"
+                },
+                "validation": {
+                  "max": "2026-11-15T12:00:00+00:00",
+                  "min": "2026-07-19T00:00:00+00:00"
+                }
+              },
+              "window": 4
+            }
+          ]
+        }
+      }
+    },
     "limitations": [
       "The backtest is synthetic and does not establish real-source temporal generalization.",
       "Time separation does not isolate recurring text, users, or products; cross-boundary overlap is reported per window.",
-      "No outcome-label availability lag or embargo is modeled, so the design assumes prior-window proxy labels are available at each refit origin.",
+      "Label-availability timestamps were not observed. The 14- and 30-day embargoes are authored stress scenarios, not validated operational SLAs.",
       "Rolling-origin ranges are not independent draws and are not confidence intervals."
     ],
     "summary": {
@@ -7717,6 +10639,7 @@
     },
     "windows": [
       {
+        "actual_validation_raw_rows": 240,
         "baselines": {
           "seeded_random_score": {
             "average_precision_attention": 0.2528725685,
@@ -7731,7 +10654,29 @@
             "train_prevalence": 0.2406417112
           }
         },
+        "embargo_raw_rows_excluded": 0,
+        "full_time_bounds": {
+          "embargo": null,
+          "future": {
+            "max": "2027-04-14T12:00:00+00:00",
+            "min": "2026-04-20T00:00:00+00:00"
+          },
+          "test": {
+            "max": "2026-04-19T12:00:00+00:00",
+            "min": "2025-12-21T00:00:00+00:00"
+          },
+          "train": {
+            "max": "2025-08-22T12:00:00+00:00",
+            "min": "2024-01-01T00:00:00+00:00"
+          },
+          "validation": {
+            "max": "2025-12-20T12:00:00+00:00",
+            "min": "2025-08-23T00:00:00+00:00"
+          }
+        },
         "future_raw_rows_excluded": 720,
+        "label_availability_cutoff": "2025-12-21T00:00:00+00:00",
+        "label_delay_days": 0,
         "labeled_partition_rows": {
           "test": 222,
           "train": 1122,
@@ -7792,10 +10737,14 @@
           }
         },
         "raw_partition_rows": {
+          "embargo": 0,
+          "future": 720,
           "test": 240,
           "train": 1200,
           "validation": 240
         },
+        "target_validation_raw_rows": 240,
+        "test_end": "2026-04-20T00:00:00+00:00",
         "test_label_alignment_placebo": {
           "draws": 20,
           "gate": {
@@ -7864,6 +10813,7 @@
             }
           }
         },
+        "test_start": "2025-12-21T00:00:00+00:00",
         "time_bounds": {
           "test": {
             "max": "2026-04-19T12:00:00+00:00",
@@ -7881,6 +10831,7 @@
         "window": 1
       },
       {
+        "actual_validation_raw_rows": 240,
         "baselines": {
           "seeded_random_score": {
             "average_precision_attention": 0.2482228204,
@@ -7895,7 +10846,29 @@
             "train_prevalence": 0.2389843167
           }
         },
+        "embargo_raw_rows_excluded": 0,
+        "full_time_bounds": {
+          "embargo": null,
+          "future": {
+            "max": "2027-04-14T12:00:00+00:00",
+            "min": "2026-08-18T00:00:00+00:00"
+          },
+          "test": {
+            "max": "2026-08-17T12:00:00+00:00",
+            "min": "2026-04-20T00:00:00+00:00"
+          },
+          "train": {
+            "max": "2025-12-20T12:00:00+00:00",
+            "min": "2024-01-01T00:00:00+00:00"
+          },
+          "validation": {
+            "max": "2026-04-19T12:00:00+00:00",
+            "min": "2025-12-21T00:00:00+00:00"
+          }
+        },
         "future_raw_rows_excluded": 480,
+        "label_availability_cutoff": "2026-04-20T00:00:00+00:00",
+        "label_delay_days": 0,
         "labeled_partition_rows": {
           "test": 222,
           "train": 1339,
@@ -7956,10 +10929,14 @@
           }
         },
         "raw_partition_rows": {
+          "embargo": 0,
+          "future": 480,
           "test": 240,
           "train": 1440,
           "validation": 240
         },
+        "target_validation_raw_rows": 240,
+        "test_end": "2026-08-18T00:00:00+00:00",
         "test_label_alignment_placebo": {
           "draws": 20,
           "gate": {
@@ -8028,6 +11005,7 @@
             }
           }
         },
+        "test_start": "2026-04-20T00:00:00+00:00",
         "time_bounds": {
           "test": {
             "max": "2026-08-17T12:00:00+00:00",
@@ -8045,6 +11023,7 @@
         "window": 2
       },
       {
+        "actual_validation_raw_rows": 240,
         "baselines": {
           "seeded_random_score": {
             "average_precision_attention": 0.3014097022,
@@ -8059,7 +11038,29 @@
             "train_prevalence": 0.2389493914
           }
         },
+        "embargo_raw_rows_excluded": 0,
+        "full_time_bounds": {
+          "embargo": null,
+          "future": {
+            "max": "2027-04-14T12:00:00+00:00",
+            "min": "2026-12-16T00:00:00+00:00"
+          },
+          "test": {
+            "max": "2026-12-15T12:00:00+00:00",
+            "min": "2026-08-18T00:00:00+00:00"
+          },
+          "train": {
+            "max": "2026-04-19T12:00:00+00:00",
+            "min": "2024-01-01T00:00:00+00:00"
+          },
+          "validation": {
+            "max": "2026-08-17T12:00:00+00:00",
+            "min": "2026-04-20T00:00:00+00:00"
+          }
+        },
         "future_raw_rows_excluded": 240,
+        "label_availability_cutoff": "2026-08-18T00:00:00+00:00",
+        "label_delay_days": 0,
         "labeled_partition_rows": {
           "test": 222,
           "train": 1561,
@@ -8120,10 +11121,14 @@
           }
         },
         "raw_partition_rows": {
+          "embargo": 0,
+          "future": 240,
           "test": 240,
           "train": 1680,
           "validation": 240
         },
+        "target_validation_raw_rows": 240,
+        "test_end": "2026-12-16T00:00:00+00:00",
         "test_label_alignment_placebo": {
           "draws": 20,
           "gate": {
@@ -8192,6 +11197,7 @@
             }
           }
         },
+        "test_start": "2026-08-18T00:00:00+00:00",
         "time_bounds": {
           "test": {
             "max": "2026-12-15T12:00:00+00:00",
@@ -8209,6 +11215,7 @@
         "window": 3
       },
       {
+        "actual_validation_raw_rows": 240,
         "baselines": {
           "seeded_random_score": {
             "average_precision_attention": 0.3288246659,
@@ -8223,7 +11230,26 @@
             "train_prevalence": 0.2389231632
           }
         },
+        "embargo_raw_rows_excluded": 0,
+        "full_time_bounds": {
+          "embargo": null,
+          "future": null,
+          "test": {
+            "max": "2027-04-14T12:00:00+00:00",
+            "min": "2026-12-16T00:00:00+00:00"
+          },
+          "train": {
+            "max": "2026-08-17T12:00:00+00:00",
+            "min": "2024-01-01T00:00:00+00:00"
+          },
+          "validation": {
+            "max": "2026-12-15T12:00:00+00:00",
+            "min": "2026-08-18T00:00:00+00:00"
+          }
+        },
         "future_raw_rows_excluded": 0,
+        "label_availability_cutoff": "2026-12-16T00:00:00+00:00",
+        "label_delay_days": 0,
         "labeled_partition_rows": {
           "test": 225,
           "train": 1783,
@@ -8284,10 +11310,14 @@
           }
         },
         "raw_partition_rows": {
+          "embargo": 0,
+          "future": 0,
           "test": 240,
           "train": 1920,
           "validation": 240
         },
+        "target_validation_raw_rows": 240,
+        "test_end": null,
         "test_label_alignment_placebo": {
           "draws": 20,
           "gate": {
@@ -8356,6 +11386,7 @@
             }
           }
         },
+        "test_start": "2026-12-16T00:00:00+00:00",
         "time_bounds": {
           "test": {
             "max": "2027-04-14T12:00:00+00:00",
@@ -8375,6 +11406,7 @@
     ]
   },
   "runtime_controls": {
+    "availability_time_observed": false,
     "capacity_null_gate_scope": "heuristic train-label permutation and test-label alignment placebo lift sanity bounds at each pre-specified 5%, 10%, and 20% capacity",
     "conditional_uncertainty_release_gate": {
       "all_points_within_intervals_diagnostic": true,
@@ -8408,7 +11440,65 @@
     },
     "conflict_reference_target_use": "audit-only after label-free split construction; never used for assignment",
     "conflict_retention_fail_closed": true,
-    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 4.0 reports emit only average_precision_attention",
+    "delay_selected_post_hoc": false,
+    "label_delay_days": [
+      0,
+      14,
+      30
+    ],
+    "label_delay_release_gate": {
+      "checks": {
+        "availability_time_observed_false": true,
+        "delay_days_exact_release_grid": true,
+        "delay_selected_post_hoc_false": true,
+        "delayed_scenarios_authored_only": true,
+        "operational_target_validated_false": true,
+        "paired_delta_keys_exact": true,
+        "pooled_placebo_draws_complete": true,
+        "pooled_placebo_gate_count_complete": true,
+        "pooled_placebo_gates_present": true,
+        "pooled_placebo_gates_release_ready": true,
+        "raw_partition_count_keys_complete": true,
+        "raw_partition_count_set_count_complete": true,
+        "raw_partition_counts_conserve_source_rows": true,
+        "same_test_review_ids_as_zero_day": true,
+        "scenario_delay_labels_match": true,
+        "scenario_keys_exact_release_grid": true,
+        "scenario_temporal_integrity_release_ready": true,
+        "scenario_window_counts_match_zero_day": true,
+        "test_horizon_metadata_match_zero_day": true,
+        "window_placebo_draws_exact_release_count": true,
+        "window_placebo_gate_count_complete": true,
+        "window_placebo_gates_present": true,
+        "window_placebo_gates_release_ready": true,
+        "zero_day_top_level_summary_compatible": true,
+        "zero_day_top_level_windows_compatible": true
+      },
+      "enforced": true,
+      "expected_delay_days": [
+        0,
+        14,
+        30
+      ],
+      "expected_placebo_draws_per_window": 20,
+      "expected_pooled_placebo_gates": 3,
+      "expected_raw_partition_count_sets": 12,
+      "expected_raw_partition_keys": [
+        "train",
+        "validation",
+        "embargo",
+        "test",
+        "future"
+      ],
+      "expected_source_rows_per_window": 2400,
+      "expected_window_placebo_gates": 12,
+      "interpretation": "Fail-closed structural and placebo-gate checks for authored label-delay sensitivity; not evidence that a delay is an observed operational SLA.",
+      "observed_pooled_placebo_gates": 3,
+      "observed_raw_partition_count_sets": 12,
+      "observed_window_placebo_gates": 12,
+      "passed": true
+    },
+    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 5.0 reports emit only average_precision_attention",
     "negative_control_gate": {
       "designs": {
         "test_label_alignment_placebo": {
@@ -8619,6 +11709,8 @@
     },
     "negative_control_mode": "multi_draw_train_and_test_label_placebos_fail_closed",
     "neutral_exclusion_stage": "inside_train_validation_test_after_manifest",
+    "operational_need_validated": false,
+    "operational_target_validated": false,
     "permutation_draws_per_fingerprint_split": 5,
     "protocol_isolation_fail_closed": true,
     "public_safety_validation": "performed_by_CLI_before_write",

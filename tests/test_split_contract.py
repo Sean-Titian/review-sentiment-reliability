@@ -14,11 +14,13 @@ from review_reliability.data import (
     make_split_keys,
 )
 from review_reliability.splits import (
+    DEFAULT_LABEL_DELAY_DAYS,
     PROTOCOLS,
     RollingOriginSpec,
     SplitSpec,
     attach_manifest,
     enforce_protocol_isolation,
+    make_label_delay_rolling_manifests,
     make_rolling_origin_manifests,
     make_split_manifest,
     manifest_metadata,
@@ -79,6 +81,15 @@ def test_rolling_origins_keep_timestamp_blocks_intact(
             validate="one_to_one",
         )
         assert joined.groupby("event_time")["partition"].nunique().max() == 1
+    delayed = make_label_delay_rolling_manifests(keys)
+    for manifests in delayed.values():
+        for manifest in manifests:
+            joined = keys[["review_id", "event_time"]].merge(
+                manifest,
+                on="review_id",
+                validate="one_to_one",
+            )
+            assert joined.groupby("event_time")["partition"].nunique().max() == 1
 
 
 @pytest.mark.parametrize(
@@ -103,6 +114,158 @@ def test_invalid_rolling_origin_specs_fail_closed(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         make_rolling_origin_manifests(make_split_keys(synthetic_reviews), spec)
+
+
+def test_label_delay_manifests_are_full_and_freeze_test_horizons(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    keys = make_split_keys(synthetic_reviews)
+    base_manifests = make_rolling_origin_manifests(keys)
+    delayed = make_label_delay_rolling_manifests(keys)
+
+    assert tuple(delayed) == DEFAULT_LABEL_DELAY_DAYS
+    assert all(len(manifests) == 4 for manifests in delayed.values())
+    for window_index, base in enumerate(base_manifests):
+        expected_test_ids = set(base.loc[base["partition"] == "test", "review_id"])
+        zero_day = delayed[0][window_index]
+        zero_projection = zero_day.loc[
+            zero_day["partition"] != "future", ["review_id", "partition"]
+        ].reset_index(drop=True)
+        zero_projection.attrs = {}
+        pd.testing.assert_frame_equal(zero_projection, base)
+
+        expected_future_ids = set(
+            zero_day.loc[zero_day["partition"] == "future", "review_id"]
+        )
+        for delay in DEFAULT_LABEL_DELAY_DAYS:
+            manifest = delayed[delay][window_index]
+            counts = manifest["partition"].value_counts()
+            assert tuple(manifest.columns) == ("review_id", "partition")
+            assert len(manifest) == len(keys)
+            assert manifest["review_id"].is_unique
+            assert set(manifest["review_id"]) == set(keys["review_id"])
+            assert int(counts.sum()) == len(keys)
+            assert set(counts.index) <= {
+                "train",
+                "validation",
+                "embargo",
+                "test",
+                "future",
+            }
+            assert set(manifest.loc[manifest["partition"] == "test", "review_id"]) == (
+                expected_test_ids
+            )
+            assert set(
+                manifest.loc[manifest["partition"] == "future", "review_id"]
+            ) == expected_future_ids
+            assert manifest.attrs["window"] == window_index + 1
+            assert manifest.attrs["label_delay_days"] == delay
+            assert pd.Timestamp(manifest.attrs["maturity_cutoff"]) == (
+                pd.Timestamp(manifest.attrs["test_start"]) - pd.Timedelta(days=delay)
+            )
+
+
+def test_label_delay_cutoff_embargo_and_recent_validation_are_exact(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    keys = make_split_keys(synthetic_reviews)
+    delayed = make_label_delay_rolling_manifests(keys)
+
+    for delay in (14, 30):
+        for manifest in delayed[delay]:
+            joined = keys[["review_id", "event_time"]].merge(
+                manifest,
+                on="review_id",
+                validate="one_to_one",
+            )
+            cutoff = pd.Timestamp(manifest.attrs["maturity_cutoff"])
+            test_start = pd.Timestamp(manifest.attrs["test_start"])
+            embargo_ids = set(
+                joined.loc[
+                    (joined["event_time"] >= cutoff)
+                    & (joined["event_time"] < test_start),
+                    "review_id",
+                ]
+            )
+            assert set(
+                joined.loc[joined["partition"] == "embargo", "review_id"]
+            ) == embargo_ids
+            assert joined.groupby("event_time")["partition"].nunique().max() == 1
+
+            train_times = joined.loc[joined["partition"] == "train", "event_time"]
+            validation_times = joined.loc[
+                joined["partition"] == "validation", "event_time"
+            ]
+            assert train_times.max() < validation_times.min()
+            assert validation_times.max() < cutoff
+            block_counts = (
+                joined.loc[joined["event_time"] < cutoff, "event_time"]
+                .value_counts(sort=False)
+                .sort_index()
+            )
+            candidate_rows = block_counts.iloc[::-1].cumsum().iloc[::-1].iloc[1:]
+            target_rows = manifest.attrs["target_validation_raw_rows"]
+            actual_rows = manifest.attrs["actual_validation_raw_rows"]
+            assert actual_rows == len(validation_times)
+            assert abs(actual_rows - target_rows) == min(
+                abs(int(rows) - target_rows) for rows in candidate_rows
+            )
+
+
+def test_label_delay_manifests_are_label_and_input_order_invariant(
+    synthetic_reviews: pd.DataFrame,
+) -> None:
+    keys = make_split_keys(synthetic_reviews)
+    shuffled = keys.sample(frac=1.0, random_state=101).reset_index(drop=True)
+    altered = synthetic_reviews.copy()
+    altered["rating"] = altered["rating"].map({1: 5, 2: 4, 3: 3, 4: 2, 5: 1})
+    expected = make_label_delay_rolling_manifests(keys)
+
+    for candidate in (
+        make_label_delay_rolling_manifests(shuffled),
+        make_label_delay_rolling_manifests(make_split_keys(altered)),
+    ):
+        assert tuple(candidate) == tuple(expected)
+        for delay in expected:
+            for expected_manifest, candidate_manifest in zip(
+                expected[delay], candidate[delay], strict=True
+            ):
+                pd.testing.assert_frame_equal(expected_manifest, candidate_manifest)
+
+
+@pytest.mark.parametrize(
+    ("delay_days", "message"),
+    [
+        ((14, 30), "include the zero-day reference"),
+        ((0, -1), "non-negative finite integers"),
+        ((0, 14.0), "non-negative finite integers"),
+        ((0, True), "non-negative finite integers"),
+        ((0, 30, 14), "strictly increasing"),
+        ((0, 14, 14), "strictly increasing"),
+    ],
+)
+def test_invalid_label_delay_grids_fail_closed(
+    synthetic_reviews: pd.DataFrame,
+    delay_days: tuple[int, ...],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        make_label_delay_rolling_manifests(
+            make_split_keys(synthetic_reviews),
+            delay_days=delay_days,
+        )
+
+
+@pytest.mark.parametrize("delay", [10_000, 10**100])
+def test_label_delay_fails_closed_when_mature_history_collapses(
+    synthetic_reviews: pd.DataFrame,
+    delay: int,
+) -> None:
+    with pytest.raises(ValueError, match="empty train or validation"):
+        make_label_delay_rolling_manifests(
+            make_split_keys(synthetic_reviews),
+            delay_days=(0, delay),
+        )
 
 
 @pytest.fixture(scope="module")

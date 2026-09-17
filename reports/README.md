@@ -10,7 +10,8 @@ python -m review_reliability benchmark
 The CLI validates the report before writing it. The artifact contains contract
 metadata, counts, proportions, average precision and calibration metrics,
 descriptive multi-seed ranges, fail-closed overlap gates, two permutation-null
-designs, four rolling-origin windows, temporal label placebos, pre-specified
+designs, four rolling-origin windows replayed under pre-specified 0/14/30-day
+label-delay scenarios, per-delay temporal label placebos, pre-specified
 5%/10%/20% queue-capacity curves, one joint conditional near-fingerprint
 cluster-bootstrap interval set, and stress diagnostics. It
 contains no row, review text, identifier, cluster key, resample index, local path,
@@ -21,14 +22,22 @@ serialized floating-point values are canonicalized to 10 decimal places.
 The numbers demonstrate that the reliability harness runs on an authored
 synthetic fixture; they are not estimates of real review performance. Multi-seed
 and rolling-origin ranges are descriptive, not confidence intervals. Contract
-4.0 separately labels its frozen strict-split percentile intervals as conditional
+5.0 retains the frozen strict-split percentile intervals as conditional
 on one fitted model, manifest, and synthetic test fixture. The three capacity
 intervals use the same 2,000 resamples and are marginal, not a simultaneous band;
 matched-seed ranges remain descriptive. They do not cover
 retraining, crossed user/product dependence, source selection, temporal drift, or
 real-data generalization.
 
-Contract 4.0 calls scikit-learn's non-interpolated metric
+The 14- and 30-day label delays are authored sensitivity scenarios with the same
+four test horizons as the zero-day reference. The report records five-way raw-row
+conservation (`train`/`validation`/`embargo`/`test`/`future`), paired metric deltas,
+12 window-level 20-draw placebo gates, with each delay's same 80 draws also checked
+in one pooled gate. No label-
+availability timestamp was observed, so these scenarios are not measured service
+levels, optimal embargoes, or evidence of an operational target.
+
+Contract 5.0 calls scikit-learn's non-interpolated metric
 `average_precision_attention`; it does not label it generic PR-AUC. A top-budget
 cutoff tie receives fractional expected allocation so input order cannot choose
 among equal scores. The 5%, 10%, and 20% workloads are pre-specified scenarios,

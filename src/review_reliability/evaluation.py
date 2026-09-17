@@ -34,6 +34,7 @@ from review_reliability.modeling import (
     predict_attention_probability,
 )
 from review_reliability.splits import (
+    DEFAULT_LABEL_DELAY_DAYS,
     PROTOCOLS,
     Protocol,
     SplitSpec,
@@ -43,7 +44,10 @@ from review_reliability.splits import (
     manifest_metadata,
 )
 from review_reliability.stress import OOV_SENTINELS, prior_shift_slice, text_stress_cases
-from review_reliability.temporal import run_rolling_origin_backtest
+from review_reliability.temporal import (
+    TEMPORAL_PLACEBO_DRAWS_PER_WINDOW,
+    run_rolling_origin_backtest,
+)
 from review_reliability.uncertainty import (
     DEFAULT_BOOTSTRAP_DRAWS,
     conditional_cluster_bootstrap,
@@ -129,6 +133,7 @@ CAPACITY_NULL_THRESHOLDS = (
         "aggregate_mean": (0.80, 1.25),
     },
 )
+LABEL_DELAY_RAW_PARTITIONS = ("train", "validation", "embargo", "test", "future")
 
 
 def _partition_labeled(attached: pd.DataFrame, partition: str) -> pd.DataFrame:
@@ -917,6 +922,267 @@ def _paired_strict_gap(raw_runs: dict[str, list[dict[str, object]]]) -> dict[str
     }
 
 
+def _label_delay_release_gate(
+    rolling_origin: dict[str, object],
+    *,
+    expected_source_rows: int,
+    enforced: bool,
+) -> dict[str, object]:
+    """Validate the public aggregate contract for label-delay sensitivity."""
+
+    sensitivity = rolling_origin.get("label_delay_sensitivity")
+    if not isinstance(sensitivity, dict):
+        raise RuntimeError("Rolling-origin output is missing label-delay sensitivity")
+    scenarios = sensitivity.get("scenarios")
+    if not isinstance(scenarios, dict):
+        raise RuntimeError("Label-delay sensitivity is missing scenario mappings")
+
+    expected_delays = list(DEFAULT_LABEL_DELAY_DAYS)
+    expected_scenario_keys = {str(delay) for delay in DEFAULT_LABEL_DELAY_DAYS}
+    zero_scenario = scenarios.get("0")
+    zero_windows = zero_scenario.get("windows") if isinstance(zero_scenario, dict) else None
+    zero_summary = zero_scenario.get("summary") if isinstance(zero_scenario, dict) else None
+    reference_window_count = len(zero_windows) if isinstance(zero_windows, list) else 0
+
+    checks: dict[str, bool] = {
+        "delay_days_exact_release_grid": sensitivity.get("delay_days") == expected_delays,
+        "scenario_keys_exact_release_grid": set(scenarios) == expected_scenario_keys,
+        "same_test_review_ids_as_zero_day": (
+            sensitivity.get("all_test_horizons_match_zero_day") is True
+        ),
+        "delay_selected_post_hoc_false": (
+            sensitivity.get("delay_selected_post_hoc") is False
+        ),
+        "availability_time_observed_false": (
+            sensitivity.get("availability_time_observed") is False
+        ),
+        "operational_target_validated_false": (
+            sensitivity.get("operational_target_validated") is False
+        ),
+        "zero_day_top_level_windows_compatible": (
+            isinstance(zero_windows, list)
+            and rolling_origin.get("windows") == zero_windows
+        ),
+        "zero_day_top_level_summary_compatible": (
+            isinstance(zero_summary, dict)
+            and rolling_origin.get("summary") == zero_summary
+        ),
+        "paired_delta_keys_exact": (
+            isinstance(sensitivity.get("paired_deltas_vs_0"), dict)
+            and set(sensitivity["paired_deltas_vs_0"]) == {"14", "30"}
+        ),
+        "scenario_delay_labels_match": True,
+        "delayed_scenarios_authored_only": True,
+        "scenario_window_counts_match_zero_day": reference_window_count > 0,
+        "scenario_temporal_integrity_release_ready": True,
+        "test_horizon_metadata_match_zero_day": reference_window_count > 0,
+        "raw_partition_count_keys_complete": True,
+        "raw_partition_counts_conserve_source_rows": True,
+        "window_placebo_gates_present": True,
+        "window_placebo_gates_release_ready": True,
+        "window_placebo_draws_exact_release_count": True,
+        "pooled_placebo_gates_present": True,
+        "pooled_placebo_gates_release_ready": True,
+        "pooled_placebo_draws_complete": True,
+    }
+
+    reference_horizons: list[dict[str, object]] = []
+    if isinstance(zero_windows, list):
+        for window in zero_windows:
+            if not isinstance(window, dict):
+                checks["test_horizon_metadata_match_zero_day"] = False
+                continue
+            raw_counts = window.get("raw_partition_rows")
+            bounds = window.get("time_bounds")
+            reference_horizons.append(
+                {
+                    "window": window.get("window"),
+                    "test_start": window.get("test_start"),
+                    "test_end": window.get("test_end"),
+                    "test_raw_rows": (
+                        raw_counts.get("test") if isinstance(raw_counts, dict) else None
+                    ),
+                    "test_time_bounds": (
+                        bounds.get("test") if isinstance(bounds, dict) else None
+                    ),
+                }
+            )
+
+    observed_window_gates = 0
+    observed_pooled_gates = 0
+    observed_raw_count_sets = 0
+    for delay in DEFAULT_LABEL_DELAY_DAYS:
+        scenario = scenarios.get(str(delay))
+        if not isinstance(scenario, dict):
+            for key in (
+                "scenario_delay_labels_match",
+                "delayed_scenarios_authored_only",
+                "scenario_window_counts_match_zero_day",
+                "scenario_temporal_integrity_release_ready",
+                "test_horizon_metadata_match_zero_day",
+                "raw_partition_count_keys_complete",
+                "raw_partition_counts_conserve_source_rows",
+                "window_placebo_gates_present",
+                "window_placebo_gates_release_ready",
+                "window_placebo_draws_exact_release_count",
+                "pooled_placebo_gates_present",
+                "pooled_placebo_gates_release_ready",
+                "pooled_placebo_draws_complete",
+            ):
+                checks[key] = False
+            continue
+
+        checks["scenario_delay_labels_match"] &= scenario.get("label_delay_days") == delay
+        checks["same_test_review_ids_as_zero_day"] &= (
+            scenario.get("all_test_horizons_match_zero_day") is True
+        )
+        checks["delayed_scenarios_authored_only"] &= (
+            scenario.get("authored_sensitivity_only") is (delay != 0)
+        )
+        windows = scenario.get("windows")
+        summary = scenario.get("summary")
+        if not isinstance(windows, list) or not isinstance(summary, dict):
+            checks["scenario_window_counts_match_zero_day"] = False
+            checks["scenario_temporal_integrity_release_ready"] = False
+            checks["test_horizon_metadata_match_zero_day"] = False
+            checks["window_placebo_gates_present"] = False
+            checks["window_placebo_gates_release_ready"] = False
+            checks["window_placebo_draws_exact_release_count"] = False
+            checks["pooled_placebo_gates_present"] = False
+            checks["pooled_placebo_gates_release_ready"] = False
+            checks["pooled_placebo_draws_complete"] = False
+            continue
+        checks["scenario_window_counts_match_zero_day"] &= (
+            len(windows) == reference_window_count
+            and summary.get("windows") == reference_window_count
+        )
+        checks["scenario_temporal_integrity_release_ready"] &= all(
+            summary.get(key) is True
+            for key in (
+                "all_test_horizons_non_overlapping",
+                "all_partitions_strictly_time_ordered",
+                "all_training_histories_expanding",
+            )
+        )
+
+        horizons: list[dict[str, object]] = []
+        for window in windows:
+            if not isinstance(window, dict):
+                checks["raw_partition_count_keys_complete"] = False
+                checks["raw_partition_counts_conserve_source_rows"] = False
+                checks["window_placebo_gates_present"] = False
+                checks["window_placebo_gates_release_ready"] = False
+                checks["window_placebo_draws_exact_release_count"] = False
+                continue
+            raw_counts = window.get("raw_partition_rows")
+            bounds = window.get("time_bounds")
+            horizons.append(
+                {
+                    "window": window.get("window"),
+                    "test_start": window.get("test_start"),
+                    "test_end": window.get("test_end"),
+                    "test_raw_rows": (
+                        raw_counts.get("test") if isinstance(raw_counts, dict) else None
+                    ),
+                    "test_time_bounds": (
+                        bounds.get("test") if isinstance(bounds, dict) else None
+                    ),
+                }
+            )
+            raw_keys_exact = (
+                isinstance(raw_counts, dict)
+                and set(raw_counts) == set(LABEL_DELAY_RAW_PARTITIONS)
+                and all(
+                    isinstance(raw_counts[name], int) and raw_counts[name] >= 0
+                    for name in LABEL_DELAY_RAW_PARTITIONS
+                )
+            )
+            checks["raw_partition_count_keys_complete"] &= raw_keys_exact
+            if raw_keys_exact:
+                observed_raw_count_sets += 1
+                checks["raw_partition_counts_conserve_source_rows"] &= (
+                    sum(int(raw_counts[name]) for name in LABEL_DELAY_RAW_PARTITIONS)
+                    == expected_source_rows
+                )
+            else:
+                checks["raw_partition_counts_conserve_source_rows"] = False
+
+            placebo = window.get("test_label_alignment_placebo")
+            gate = placebo.get("gate") if isinstance(placebo, dict) else None
+            gate_present = isinstance(gate, dict)
+            checks["window_placebo_gates_present"] &= gate_present
+            if gate_present:
+                observed_window_gates += 1
+                checks["window_placebo_gates_release_ready"] &= (
+                    gate.get("enforced") is True and gate.get("passed") is True
+                )
+                checks["window_placebo_draws_exact_release_count"] &= (
+                    placebo.get("draws") == TEMPORAL_PLACEBO_DRAWS_PER_WINDOW
+                    and gate.get("draws") == TEMPORAL_PLACEBO_DRAWS_PER_WINDOW
+                )
+            else:
+                checks["window_placebo_gates_release_ready"] = False
+                checks["window_placebo_draws_exact_release_count"] = False
+
+        checks["test_horizon_metadata_match_zero_day"] &= (
+            horizons == reference_horizons
+        )
+        pooled_gate = summary.get("test_label_alignment_placebo_gate")
+        pooled_present = isinstance(pooled_gate, dict)
+        checks["pooled_placebo_gates_present"] &= pooled_present
+        if pooled_present:
+            observed_pooled_gates += 1
+            checks["pooled_placebo_gates_release_ready"] &= (
+                pooled_gate.get("enforced") is True and pooled_gate.get("passed") is True
+            )
+            checks["pooled_placebo_draws_complete"] &= pooled_gate.get("draws") == (
+                TEMPORAL_PLACEBO_DRAWS_PER_WINDOW * reference_window_count
+            )
+        else:
+            checks["pooled_placebo_gates_release_ready"] = False
+            checks["pooled_placebo_draws_complete"] = False
+
+    expected_window_gates = len(DEFAULT_LABEL_DELAY_DAYS) * reference_window_count
+    expected_pooled_gates = len(DEFAULT_LABEL_DELAY_DAYS)
+    expected_raw_count_sets = expected_window_gates
+    checks["window_placebo_gate_count_complete"] = (
+        observed_window_gates == expected_window_gates
+    )
+    checks["pooled_placebo_gate_count_complete"] = (
+        observed_pooled_gates == expected_pooled_gates
+    )
+    checks["raw_partition_count_set_count_complete"] = (
+        observed_raw_count_sets == expected_raw_count_sets
+    )
+
+    required_checks = dict(checks)
+    passed = all(required_checks.values())
+    if enforced and not passed:
+        failed = ", ".join(name for name, check in required_checks.items() if not check)
+        raise RuntimeError(
+            "Label-delay release contract failed; publication must stop: " + failed
+        )
+    return {
+        "passed": passed if enforced else None,
+        "enforced": enforced,
+        "expected_delay_days": expected_delays,
+        "expected_raw_partition_keys": list(LABEL_DELAY_RAW_PARTITIONS),
+        "expected_source_rows_per_window": expected_source_rows,
+        "expected_placebo_draws_per_window": TEMPORAL_PLACEBO_DRAWS_PER_WINDOW,
+        "expected_window_placebo_gates": expected_window_gates,
+        "observed_window_placebo_gates": observed_window_gates,
+        "expected_pooled_placebo_gates": expected_pooled_gates,
+        "observed_pooled_placebo_gates": observed_pooled_gates,
+        "expected_raw_partition_count_sets": expected_raw_count_sets,
+        "observed_raw_partition_count_sets": observed_raw_count_sets,
+        "checks": required_checks,
+        "interpretation": (
+            "Fail-closed structural and placebo-gate checks for authored label-delay "
+            "sensitivity; not evidence that a delay is an observed operational SLA."
+        ),
+    }
+
+
 def run_synthetic_benchmark(
     *,
     config: SyntheticConfig | None = None,
@@ -1048,9 +1314,14 @@ def run_synthetic_benchmark(
         placebo_draws_per_window=(20 if enforce_negative_control else 5),
         enforce_placebo_gate=enforce_negative_control,
     )
+    label_delay_release_gate = _label_delay_release_gate(
+        rolling_origin,
+        expected_source_rows=len(frame),
+        enforced=enforce_negative_control,
+    )
 
     return {
-        "contract_version": "4.0",
+        "contract_version": "5.0",
         "artifact_scope": "aggregate_only_synthetic_reliability_fixture",
         "synthetic_data": True,
         "source_rows_included": False,
@@ -1078,6 +1349,12 @@ def run_synthetic_benchmark(
                 "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue "
                 "capacities. Matched-seed ranges are descriptive; frozen-rule cluster "
                 "bootstrap intervals are marginal, not simultaneous."
+            ),
+            "label_delay_sensitivity": (
+                "Rolling-origin comparisons at pre-specified 0-, 14-, and 30-day proxy-label "
+                "availability delays with identical test horizons. Delayed rows are embargoed "
+                "from fitting and threshold selection; 14 and 30 days are authored scenarios, "
+                "not observed service-level agreements."
             ),
             "negative_control_sanity_gates": (
                 "Pre-specified fail-closed heuristic bounds for five null draws per strict "
@@ -1110,7 +1387,14 @@ def run_synthetic_benchmark(
             "capacity_selected_post_hoc": False,
             "staffing_cost_or_value_modeled": False,
             "source_rating_is_target_oracle": True,
+            "label_delay_days": list(DEFAULT_LABEL_DELAY_DAYS),
+            "availability_time_observed": False,
+            "delay_selected_post_hoc": False,
+            "operational_target_validated": False,
             "operational_need_validated": False,
+            "label_delay_scenario_scope": (
+                "14- and 30-day delays are authored sensitivity scenarios, not business SLAs"
+            ),
             "scope": "offline synthetic reliability audit, not a deployment claim",
             "causal_claim": False,
         },
@@ -1170,9 +1454,15 @@ def run_synthetic_benchmark(
             ),
             "rolling_origin_temporal_separation": True,
             "rolling_origin_cross_boundary_entity_isolation": False,
+            "label_delay_days": list(DEFAULT_LABEL_DELAY_DAYS),
+            "availability_time_observed": False,
+            "delay_selected_post_hoc": False,
+            "operational_target_validated": False,
+            "operational_need_validated": False,
+            "label_delay_release_gate": label_delay_release_gate,
             "legacy_metric_alias": (
                 "classification_metrics keeps pr_auc_attention for private adapter "
-                "compatibility; contract 4.0 reports emit only average_precision_attention"
+                "compatibility; contract 5.0 reports emit only average_precision_attention"
             ),
             "public_safety_validation": "performed_by_CLI_before_write",
         },
@@ -1181,10 +1471,14 @@ def run_synthetic_benchmark(
                 "All scores come from authored synthetic text and demonstrate the evaluation "
                 "system only."
             ),
-            "The target is a rating-derived proxy, not human-annotated sentiment or causal impact.",
             (
-                "No real-data generalization, fairness, moderation, or business value claim "
-                "is supported."
+                "The source rating is the target oracle for this rating-derived proxy; when "
+                "ratings are available at decision time, a text score may be operationally "
+                "redundant. The proxy is not human-annotated sentiment or causal impact."
+            ),
+            (
+                "No real-data generalization, fairness, moderation, causal, operational, or "
+                "business value claim is supported."
             ),
             (
                 "The 5%, 10%, and 20% queue shares are pre-specified sensitivity scenarios, "
@@ -1216,6 +1510,11 @@ def run_synthetic_benchmark(
             (
                 "Rolling-origin windows preserve chronology but allow recurring text, users, "
                 "and products across time; those overlaps are audited rather than removed."
+            ),
+            (
+                "Label-availability timestamps were not observed. The 14- and 30-day delays "
+                "are authored stress scenarios, not validated operational SLAs, and their "
+                "paired rolling-origin ranges are not confidence intervals."
             ),
         ],
     }
