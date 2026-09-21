@@ -858,8 +858,8 @@ def _protocol_sensitivity_ladder(
     roles = {
         "row_random": ("naive reference", "no duplicate or entity isolation"),
         "fingerprint_group": (
-            "duplicate-isolated strict benchmark",
-            "normalized exact and token-set fingerprint isolation",
+            "combined-input fingerprint benchmark",
+            "normalized full-input and token-set-equality isolation",
         ),
         "user_group": ("new-user view", "user-identity isolation"),
         "product_group": ("new-product view", "product-identity isolation"),
@@ -916,7 +916,7 @@ def _paired_strict_gap(raw_runs: dict[str, list[dict[str, object]]]) -> dict[str
         "average_precision_difference": aggregate_scalar_runs(ap_differences),
         "ap_lift_difference": aggregate_scalar_runs(ap_lift_differences),
         "sign_convention": (
-            "Negative values mean the fingerprint-isolated view scored lower; positive values "
+            "Negative values mean the fingerprint-group view scored lower; positive values "
             "mean it scored higher. Neither direction is required on the synthetic fixture."
         ),
     }

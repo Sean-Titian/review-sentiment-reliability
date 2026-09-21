@@ -277,8 +277,8 @@ def generate_synthetic_reviews(config: SyntheticConfig | None = None) -> pd.Data
             summary_pool = summary_negative if text_state else summary_positive
             summary = _choice(rng, summary_pool)
         else:
-            text = str(records[duplicate_source]["text"])
-            summary = str(records[duplicate_source]["summary"])
+            text = records[duplicate_source]["text"]
+            summary = records[duplicate_source]["summary"]
 
         if rng.random() < config.missing_text_rate:
             text = None

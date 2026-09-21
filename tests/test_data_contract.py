@@ -28,6 +28,14 @@ def test_synthetic_fixture_is_deterministic_and_well_formed() -> None:
     assert first["text"].isna().any()
 
 
+def test_synthetic_duplicate_propagation_preserves_missing_body_values() -> None:
+    frame = generate_synthetic_reviews()
+    present_bodies = frame["text"].dropna().astype(str).str.strip().str.casefold()
+
+    assert not present_bodies.isin({"none", "nan", "nat", "<na>"}).any()
+    assert int(frame["text"].isna().sum()) == 81
+
+
 def test_rating_proxy_mapping_and_neutral_exclusion() -> None:
     frame = generate_synthetic_reviews(SyntheticConfig(n_rows=200, seed=7))
     labeled = derive_rating_proxy(frame)

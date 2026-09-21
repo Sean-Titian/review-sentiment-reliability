@@ -16,8 +16,21 @@ model, or real-data performance claim.
 
 ## What this milestone establishes
 
-Version `0.5.0` extends the public artifact to evaluation contract `5.0` without
-adding source data or a larger model:
+Package `0.5.1` retains evaluation contract `5.0` and corrects missing-value
+propagation in the canonical synthetic fixture without adding source data or a
+larger model:
+
+- In `0.5.0`, 18 duplicate-generated rows inherited a missing body as the literal
+  string `"None"`. The generator now preserves native nulls, so the canonical
+  missing-body count is 81/2,400 (3.375%) rather than 63/2,400 (2.625%). A
+  regression test rejects stringified missing-value sentinels. The configured
+  2.5% rate is a per-row injection probability; inherited duplicate nulls make
+  the realized share higher.
+- The tracked report and every benchmark number below were regenerated from the
+  corrected fixture. They supersede the `0.5.0` synthetic results; metric changes
+  are a data integrity correction, not evidence that the model improved.
+- The evaluation schema, decision contract, model, seeds, split protocols, null
+  checks, and release gates remain contract `5.0`.
 
 - Four fixed rolling test horizons are now replayed under pre-specified 0-, 14-,
   and 30-day proxy-label delay scenarios. Every scenario evaluates the same test
@@ -28,14 +41,14 @@ adding source data or a larger model:
   selection.
 - On this fixture, 14- and 30-day scenarios exclude 28 and 60 recent raw rows per
   window while keeping validation and test at 240 raw rows each. Test submissions
-  stay identical; validation shifts earlier. The zero-day path reproduces the
-  prior rolling-origin manifests and metrics exactly.
+  stay identical; validation shifts earlier. Within the corrected fixture, the
+  zero-day path is parity-checked against the top-level rolling-origin result.
 - Each delay has four 20-draw window-level test-label placebos; those 80 draws are
   also checked in one pooled gate. All 12 window gates and all three pooled gates pass their
   pre-specified heuristic bounds; these are sanity checks, not p-values.
 - Paired metric changes are non-monotonic. Relative to zero delay, mean AP changes by
-  +0.002 at 14 days and -0.009 at 30 days across four correlated windows, while
-  mean lift-at-10% changes by -0.091 and -0.050. These paired ranges are
+  +0.003 at 14 days and -0.008 at 30 days across four correlated windows, while
+  mean lift-at-10% changes by -0.091 and -0.166. These paired ranges are
   descriptive, not confidence intervals.
 - Label-availability timestamps were not observed: 14 and 30 days are authored
   sensitivity scenarios, not measured service levels, optimal embargoes, or
@@ -91,46 +104,51 @@ to unscored feedback would require separate validation.
 The tracked report was generated with 2,400 authored synthetic rows. Its
 generator deliberately plants drift, mixed sentiment, missing text, repeated
 entities, duplicate content, and conflicting rating/text signals. About 44.6%
-of rows belong to a repeated normalized-text group and 16.2% of labeled rows
+of rows belong to a repeated normalized-text group and 16.3% of labeled rows
 belong to a fingerprint with conflicting proxy labels. This is an adversarial
 test fixture, not a claim about any commercial review dataset.
 
 | Protocol | Attention prevalence | Average precision (AP) | Brier | Recall @ 10% budget | Lift @ 10% budget |
 |---|---:|---:|---:|---:|---:|
-| Row-random (naive diagnostic) | 0.269 | 0.443 | 0.179 | 0.200 | 2.00x |
-| Fingerprint-group | 0.242 | 0.448 | 0.162 | 0.218 | 2.14x |
-| User-group | 0.264 | 0.452 | 0.176 | 0.197 | 1.94x |
-| Product-group | 0.242 | 0.462 | 0.160 | 0.221 | 2.20x |
-| Forward-time | 0.309 | 0.515 | 0.196 | 0.196 | 1.94x |
+| Row-random (naive diagnostic) | 0.269 | 0.449 | 0.179 | 0.198 | 1.97x |
+| Fingerprint-group | 0.241 | 0.451 | 0.162 | 0.208 | 2.07x |
+| User-group | 0.264 | 0.449 | 0.176 | 0.194 | 1.91x |
+| Product-group | 0.242 | 0.458 | 0.161 | 0.219 | 2.18x |
+| Forward-time | 0.309 | 0.508 | 0.196 | 0.196 | 1.94x |
 
 AP values are not directly comparable without prevalence because prevalence is
 the no-skill AP reference. Here the stricter views do not uniformly lower the
 score; that non-monotonic result is kept rather than forcing the expected story.
 Across three matched seeds, fingerprint grouping changed AP versus row-random by
-`+0.006` on average, ranging from `-0.056` to `+0.078`. These are descriptive
+`+0.002` on average, ranging from `-0.067` to `+0.063`. These are descriptive
 sensitivity results on one synthetic fixture, not a superiority claim.
 
+The fingerprint protocol co-locates equal normalized full-input fingerprints and
+equal combined summary-plus-body token sets. It is not semantic or threshold-based
+near-duplicate detection, and it does not claim isolation for each feature field
+considered separately.
+
 On the fingerprint-group protocol, the training-prevalence probability baseline
-had Brier 0.184 versus 0.162 for the model. Across 15 train-label permutations,
-mean AP/prevalence was 1.117 and ROC-AUC was 0.500; mean lifts at 5%/10%/20%
-capacity were 1.262/1.127/1.076. Across 15 test-label-alignment placebo draws,
-the corresponding AP/prevalence and ROC-AUC means were 1.009 and 0.496, while
-capacity lifts were 0.893/0.964/0.958. Every draw and every aggregate capacity
+had Brier 0.183 versus 0.162 for the model. Across 15 train-label permutations,
+mean AP/prevalence was 1.079 and ROC-AUC was 0.499; mean lifts at 5%/10%/20%
+capacity were 1.101/1.111/1.036. Across 15 test-label-alignment placebo draws,
+the corresponding AP/prevalence and ROC-AUC means were 1.034 and 0.499, while
+capacity lifts were 0.974/0.962/0.976. Every draw and every aggregate capacity
 mean passed the fixed heuristic sanity bounds before the report was written. These
 bounds can stop a suspicious release, but are not a calibrated joint hypothesis test.
 
 ### Queue-capacity sensitivity
 
 The table below uses the first strict fingerprint-group split and one frozen scoring
-rule. Queue rows are the actual `ceil` workloads for its 416 labeled test rows. All
+rule. Queue rows are the actual `ceil` workloads for its 415 labeled test rows. All
 three capacities were specified before the canonical run and share the same 2,000
 cluster-bootstrap resamples.
 
 | Queue share | Queue rows | Precision | Recall | Lift | Conditional 95% lift interval | Lift range across 3 matched seeds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 5% | 21 | 0.333 | 0.068 | 1.35x | [0.51x, 2.17x] | 1.35x–2.89x |
-| 10% | 42 | 0.429 | 0.175 | 1.73x | [0.96x, 2.28x] | 1.73x–2.35x |
-| 20% | 84 | 0.464 | 0.379 | 1.88x | [1.37x, 2.30x] | 1.88x–2.21x |
+| 5% | 21 | 0.286 | 0.058 | 1.15x | [0.48x, 2.18x] | 1.15x–2.99x |
+| 10% | 42 | 0.357 | 0.146 | 1.44x | [0.88x, 2.17x] | 1.44x–2.53x |
+| 20% | 83 | 0.458 | 0.369 | 1.84x | [1.40x, 2.29x] | 1.84x–2.24x |
 
 The 5% and 10% pointwise lift intervals cross the chance value of 1.00x. The 20%
 interval does not, conditional on this one frozen synthetic scoring rule. That is
@@ -142,16 +160,17 @@ retains precision and recall intervals rather than selecting the largest lift.
 
 ### Rolling-origin and label-delay sensitivity
 
-The zero-day reference below preserves the previous rolling-origin result. Each row
-is a different chronological test horizon. Training history expands; the validation
-and test spans remain adjacent 10% slices, and the four test spans do not overlap.
+The corrected-fixture zero-day reference below is the top-level rolling-origin
+result. Each row is a different chronological test horizon. Training history
+expands; the validation and test spans remain adjacent 10% slices, and the four
+test spans do not overlap.
 
 | Window | Labeled test rows | Prevalence | AP | AP − prevalence | Brier | Recall @ 10% | Lift @ 10% |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 222 | 0.239 | 0.457 | 0.218 | 0.160 | 0.226 | 2.19x |
-| 2 | 222 | 0.239 | 0.523 | 0.284 | 0.157 | 0.283 | 2.73x |
-| 3 | 222 | 0.329 | 0.501 | 0.173 | 0.207 | 0.151 | 1.45x |
-| 4 | 225 | 0.289 | 0.506 | 0.217 | 0.182 | 0.215 | 2.11x |
+| 1 | 222 | 0.239 | 0.454 | 0.215 | 0.160 | 0.226 | 2.19x |
+| 2 | 222 | 0.239 | 0.497 | 0.258 | 0.158 | 0.283 | 2.73x |
+| 3 | 222 | 0.329 | 0.507 | 0.179 | 0.207 | 0.151 | 1.45x |
+| 4 | 225 | 0.289 | 0.491 | 0.203 | 0.182 | 0.231 | 2.26x |
 
 The same four test horizons are then frozen while recent history is embargoed under
 the 14- and 30-day authored delay scenarios. Deltas are delayed minus zero-day;
@@ -160,8 +179,8 @@ lower Brier is better.
 | Delay scenario | Embargoed raw rows per window | Mean AP delta | AP delta range | Mean Brier delta | Mean recall@10% delta | Mean lift@10% delta | Lift@10% delta range |
 |---:|---:|---:|---:|---:|---:|---:|---:|
 | 0 days | 0 | 0.000 | [0.000, 0.000] | 0.0000 | 0.000 | 0.000 | [0.000, 0.000] |
-| 14 days | 28 | +0.002 | [-0.008, +0.020] | -0.0002 | -0.009 | -0.091 | [-0.182, 0.000] |
-| 30 days | 60 | -0.009 | [-0.031, +0.002] | +0.0006 | -0.005 | -0.050 | [-0.182, +0.132] |
+| 14 days | 28 | +0.003 | [-0.006, +0.020] | -0.0002 | -0.009 | -0.091 | [-0.182, 0.000] |
+| 30 days | 60 | -0.008 | [-0.028, +0.003] | +0.0006 | -0.017 | -0.166 | [-0.301, 0.000] |
 
 Each delay refits the model and reselects its threshold using only its eligible
 train and validation rows. These four-window ranges are correlated descriptive
@@ -175,7 +194,7 @@ Chronology does not create cold-start isolation. Depending on the window,
 19.6%–37.1% of raw test rows reuse a near-text fingerprint seen in earlier history,
 97.1%–98.8% reuse a user group, and 100% reuse a product group. Those exposures are
 reported per window. Across 80 test-label-alignment placebos, mean ROC-AUC was
-0.503, AP/prevalence 1.064, and lift@10% 0.972 in the zero-day reference. Across
+0.503, AP/prevalence 1.065, and lift@10% 0.982 in the zero-day reference. Across
 all three delays, all 12 window-specific 20-draw gates passed; each delay's same
 80 draws also passed one pooled gate under the fixed heuristic bounds.
 
@@ -183,16 +202,16 @@ all three delays, all 12 window-specific 20-draw gates passed; each delay's same
 
 The intervals freeze the first fingerprint-group manifest, fitted model, and
 authored synthetic test fixture after partition-local 3-star exclusion. They
-resample 302 near-text fingerprint clusters 2,000 times; the effective cluster
-count is 210.0, the largest cluster is 1.9% of test rows, and no draw is replenished.
+resample 301 near-text fingerprint clusters 2,000 times; the effective cluster
+count is 209.3, the largest cluster is 1.9% of test rows, and no draw is replenished.
 The non-capacity diagnostics are:
 
 | Metric | Fixed-test estimate | Conditional 95% lower | Conditional 95% upper |
 |---|---:|---:|---:|
-| Average precision | 0.395 | 0.317 | 0.505 |
-| AP − prevalence | 0.147 | 0.093 | 0.239 |
-| Brier | 0.169 | 0.149 | 0.188 |
-| Brier improvement vs train-prevalence probability | 0.017 | 0.004 | 0.032 |
+| Average precision | 0.394 | 0.316 | 0.498 |
+| AP − prevalence | 0.146 | 0.092 | 0.233 |
+| Brier | 0.170 | 0.150 | 0.189 |
+| Brier improvement vs train-prevalence probability | 0.017 | 0.003 | 0.030 |
 
 These are marginal percentile intervals conditional on one frozen synthetic scoring
 rule—not uncertainty over retraining, threshold selection, crossed user/product
@@ -202,10 +221,10 @@ protocol table. Capacity intervals use the same resamples and are shown together
 the pre-specified capacity table above; none can support a deployment-benefit claim.
 
 The OOV-only stress case was also made structural rather than cosmetic: 100% of
-rows produced zero TF-IDF vectors, AP fell exactly to prevalence (0.242), and
-the mean absolute probability change was 0.134. Because all resulting scores
+rows produced zero TF-IDF vectors, AP fell exactly to prevalence (0.241), and
+the mean absolute probability change was 0.132. Because all resulting scores
 tied, arbitrary row-order recall/lift values are omitted. Replacing every fourth
-body token (25% where length permits) produced 28.6% observed OOV tokens and a
+body token (25% where length permits) produced 28.5% observed OOV tokens and a
 mean probability change of 0.021. These numbers diagnose this authored fixture
 only. Exact gates, ranges, and aggregate evidence are in
 [`reports/synthetic-benchmark.json`](reports/synthetic-benchmark.json).

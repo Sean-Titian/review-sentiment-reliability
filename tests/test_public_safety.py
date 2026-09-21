@@ -129,6 +129,7 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
     assert report["source_trained_artifacts_included"] is False
+    assert report["data_audit"]["missing_body_share"] == 0.03375
     assert report["runtime_controls"]["negative_control_mode"] == (
         "multi_draw_train_and_test_label_placebos_fail_closed"
     )

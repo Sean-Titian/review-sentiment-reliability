@@ -29,6 +29,12 @@ matched-seed ranges remain descriptive. They do not cover
 retraining, crossed user/product dependence, source selection, temporal drift, or
 real-data generalization.
 
+Package 0.5.1 corrects duplicate propagation that had converted 18 inherited
+missing bodies into the literal string `"None"`. The canonical fixture now keeps
+all 81 missing bodies as native nulls, and the tracked report was regenerated in
+full. Its values supersede the 0.5.0 synthetic report; changes are not presented as
+model improvement. The evaluation schema and contract version remain 5.0.
+
 The 14- and 30-day label delays are authored sensitivity scenarios with the same
 four test horizons as the zero-day reference. The report records five-way raw-row
 conservation (`train`/`validation`/`embargo`/`test`/`future`), paired metric deltas,
