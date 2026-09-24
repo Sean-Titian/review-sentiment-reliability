@@ -125,11 +125,25 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     report_path = ROOT / "reports" / "synthetic-benchmark.json"
     assert report_path.exists()
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["contract_version"] == "5.0"
+    assert report["contract_version"] == "5.1"
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
     assert report["source_trained_artifacts_included"] is False
     assert report["data_audit"]["missing_body_share"] == 0.03375
+    recurrence = report["feature_recurrence_audit"]
+    assert recurrence["scope"].startswith("raw synthetic rows")
+    assert recurrence["target_bearing_fields_used"] == []
+    assert "runs" not in recurrence
+    assert recurrence["release_gate"]["enforced"] is True
+    assert recurrence["release_gate"]["passed"] is True
+    assert all(recurrence["release_gate"]["checks"].values())
+    assert report["runtime_controls"]["feature_recurrence_release_gate"] == recurrence[
+        "release_gate"
+    ]
+    for method in ("normalized_exact", "token_set_equality"):
+        assert recurrence["summary"]["combined_input"][method][
+            "cross_partition_groups"
+        ]["max"] == 0
     assert report["runtime_controls"]["negative_control_mode"] == (
         "multi_draw_train_and_test_label_placebos_fail_closed"
     )

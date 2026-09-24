@@ -13,27 +13,39 @@ descriptive multi-seed ranges, fail-closed overlap gates, two permutation-null
 designs, four rolling-origin windows replayed under pre-specified 0/14/30-day
 label-delay scenarios, per-delay temporal label placebos, pre-specified
 5%/10%/20% queue-capacity curves, one joint conditional near-fingerprint
-cluster-bootstrap interval set, and stress diagnostics. It
-contains no row, review text, identifier, cluster key, resample index, local path,
-source-trained model, or restricted source data.
+cluster-bootstrap interval set, stress diagnostics, and a target-free
+feature-level exact/token-set recurrence audit over the three strict manifests.
+The audit reports aggregate counts and shares for summary, body, and combined
+input; empty normalized values are separated from recurrence denominators. It
+contains no row, review text, identifier, fingerprint, cluster key, resample
+index, local path, source-trained model, or restricted source data.
 To prevent immaterial solver/BLAS tails from changing the tracked artifact,
 serialized floating-point values are canonicalized to 10 decimal places.
 
 The numbers demonstrate that the reliability harness runs on an authored
 synthetic fixture; they are not estimates of real review performance. Multi-seed
 and rolling-origin ranges are descriptive, not confidence intervals. Contract
-5.0 retains the frozen strict-split percentile intervals as conditional
+5.1 retains the frozen strict-split percentile intervals as conditional
 on one fitted model, manifest, and synthetic test fixture. The three capacity
 intervals use the same 2,000 resamples and are marginal, not a simultaneous band;
 matched-seed ranges remain descriptive. They do not cover
 retraining, crossed user/product dependence, source selection, temporal drift, or
 real-data generalization.
 
-Package 0.5.1 corrects duplicate propagation that had converted 18 inherited
-missing bodies into the literal string `"None"`. The canonical fixture now keeps
-all 81 missing bodies as native nulls, and the tracked report was regenerated in
-full. Its values supersede the 0.5.0 synthetic report; changes are not presented as
-model improvement. The evaluation schema and contract version remain 5.0.
+Package 0.6.0 adds a fail-closed feature-recurrence audit. Across all three
+strict manifests, combined-input recurrence is zero for both normalized-exact
+and token-set equality. The non-zero summary/body results are low-cardinality
+feature exposure, not a target-leakage claim, and the equality-only audit is not
+fuzzy or semantic near-duplicate detection. It emits no per-seed rows, text,
+identifiers, fingerprints, or cluster keys.
+
+The package retains the 0.5.1 correction to duplicate propagation that had
+converted 18 inherited missing bodies into the literal string `"None"`. The
+canonical fixture now keeps all 81 missing bodies as native nulls, and the tracked
+report was regenerated in full. Its values supersede the 0.5.0 synthetic report;
+changes are not presented as model improvement. The model, existing metrics, and
+decision contract are unchanged; evaluation contract 5.1 adds only the recurrence
+evidence and gate.
 
 The 14- and 30-day label delays are authored sensitivity scenarios with the same
 four test horizons as the zero-day reference. The report records five-way raw-row
@@ -43,7 +55,7 @@ in one pooled gate. No label-
 availability timestamp was observed, so these scenarios are not measured service
 levels, optimal embargoes, or evidence of an operational target.
 
-Contract 5.0 calls scikit-learn's non-interpolated metric
+Contract 5.1 retains scikit-learn's non-interpolated metric
 `average_precision_attention`; it does not label it generic PR-AUC. A top-budget
 cutoff tie receives fractional expected allocation so input order cannot choose
 among equal scores. The 5%, 10%, and 20% workloads are pre-specified scenarios,

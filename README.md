@@ -16,9 +16,30 @@ model, or real-data performance claim.
 
 ## What this milestone establishes
 
-Package `0.5.1` retains evaluation contract `5.0` and corrects missing-value
-propagation in the canonical synthetic fixture without adding source data or a
-larger model:
+Package `0.6.0` extends evaluation contract `5.1` with a fail-closed,
+feature-level recurrence audit without adding source data or a larger model:
+
+- Across all three strict fingerprint-group seeds, normalized-exact and
+  token-set-equality recurrence of the combined model input is zero across
+  train, validation, and test. The audit uses no target-bearing field and emits
+  only aggregate counts and shares.
+- Excluding 81 empty bodies from recurrence denominators, body-only recurrence
+  affects 28.5%--29.7% of non-empty raw rows and 38.0%--42.8% of non-empty test
+  rows across the three manifests. All eight low-cardinality summary templates
+  recur across partitions and affect 100% of rows; this is feature exposure,
+  not by itself leakage.
+- Exact and token-set equality produce identical groups on this authored
+  fixture: 1,305 non-empty body groups and 1,731 combined-input groups. This
+  result does not validate fuzzy, threshold-based, or semantic near-duplicate
+  detection.
+- Empty normalized values are counted separately rather than collapsed into a
+  pseudo-duplicate cluster. The release gate verifies count conservation,
+  finite and consistent shares, a complete audit schema, and combined-input
+  isolation on every evaluation seed before writing the report.
+- The model, split protocols, existing model-performance metric definitions,
+  benchmark values, seeds, and decision contract are unchanged from `0.5.1`.
+
+Package `0.6.0` also retains the `0.5.1` data-integrity correction:
 
 - In `0.5.0`, 18 duplicate-generated rows inherited a missing body as the literal
   string `"None"`. The generator now preserves native nulls, so the canonical
@@ -29,8 +50,8 @@ larger model:
 - The tracked report and every benchmark number below were regenerated from the
   corrected fixture. They supersede the `0.5.0` synthetic results; metric changes
   are a data integrity correction, not evidence that the model improved.
-- The evaluation schema, decision contract, model, seeds, split protocols, null
-  checks, and release gates remain contract `5.0`.
+- The decision contract, model, seeds, split protocols, and existing null checks
+  remain unchanged; contract `5.1` adds the recurrence audit and its gate.
 
 - Four fixed rolling test horizons are now replayed under pre-specified 0-, 14-,
   and 30-day proxy-label delay scenarios. Every scenario evaluates the same test
@@ -127,6 +148,25 @@ The fingerprint protocol co-locates equal normalized full-input fingerprints and
 equal combined summary-plus-body token sets. It is not semantic or threshold-based
 near-duplicate detection, and it does not claim isolation for each feature field
 considered separately.
+
+### Feature-level recurrence boundary
+
+The contract now measures that boundary directly on the raw synthetic rows for
+each of the three strict manifests. Empty normalized values are reported but
+excluded from recurrence denominators. Ranges below are across evaluation seeds;
+the summary has no empty values, so its non-empty and all-row shares coincide.
+
+| Field | Empty raw rows | Unique non-empty groups | Cross-partition groups | Affected non-empty raw-row share | Affected non-empty raw-test-row share |
+|---|---:|---:|---:|---:|---:|
+| Summary | 0 | 8 | 8 | 100.0% | 100.0% |
+| Body | 81 | 1,305 | 199--207 | 28.5%--29.7% | 38.0%--42.8% |
+| Combined input | 0 | 1,731 | 0 | 0.0% | 0.0% |
+
+Normalized-exact and token-set-equality methods are identical for every field on
+this fixture. The non-zero summary and body rows are an honest exposure audit,
+not evidence that target information crossed partitions. Combined-input equality
+is isolated because that is the model input used to construct the reference
+split. The audit neither detects nor claims semantic similarity.
 
 On the fingerprint-group protocol, the training-prevalence probability baseline
 had Brier 0.183 versus 0.162 for the model. Across 15 train-label permutations,
@@ -265,6 +305,7 @@ workflow downloads review data.
 validate label-free split fields
   -> build immutable train / validation / test manifest
   -> fail closed on protocol-specific cross-partition overlap
+  -> audit target-free summary, body, and combined-input recurrence on strict manifests
   -> derive rating proxy and exclude rating 3 inside each partition
   -> verify target-conflicting fingerprints were retained
      (the fingerprint protocol also co-locates them)

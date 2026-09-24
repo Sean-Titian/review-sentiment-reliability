@@ -35,8 +35,20 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
     assert strict["negative_control_train_label_permutation"] is not None
     assert strict["placebo_test_label_alignment"] is not None
     assert strict["conflict_retention_gate"]["all_runs_passed"] is True
-    assert report["contract_version"] == "5.0"
+    assert report["contract_version"] == "5.1"
     assert report["runtime_controls"]["protocol_isolation_fail_closed"] is True
+    recurrence = report["feature_recurrence_audit"]
+    assert recurrence["target_bearing_fields_used"] == []
+    assert recurrence["release_gate"]["enforced"] is False
+    assert recurrence["release_gate"]["passed"] is None
+    assert all(recurrence["release_gate"]["checks"].values())
+    for method in ("normalized_exact", "token_set_equality"):
+        assert recurrence["summary"]["combined_input"][method][
+            "cross_partition_groups"
+        ]["max"] == 0
+        assert recurrence["summary"]["body"][method]["cross_partition_groups"][
+            "max"
+        ] > 0
     assert report["decision_contract"]["causal_claim"] is False
     assert report["decision_contract"]["availability_time_observed"] is False
     assert report["decision_contract"]["delay_selected_post_hoc"] is False

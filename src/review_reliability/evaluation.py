@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import sklearn
 
-from review_reliability.audit import dataset_audit
+from review_reliability.audit import dataset_audit, feature_recurrence_audit
 from review_reliability.data import (
     RAW_COLUMNS,
     TARGET_COLUMN,
@@ -1281,6 +1281,12 @@ def run_synthetic_benchmark(
         [_partition_labeled(audit_attached, name) for name in ("train", "validation", "test")],
         ignore_index=True,
     )
+    recurrence_audit = feature_recurrence_audit(
+        frame,
+        split_keys,
+        seeds,
+        enforce_release_gate=enforce_negative_control,
+    )
 
     sensitivity_ladder = _protocol_sensitivity_ladder(protocol_reports)
     strict_gap = _paired_strict_gap(raw_runs)
@@ -1321,7 +1327,7 @@ def run_synthetic_benchmark(
     )
 
     return {
-        "contract_version": "5.0",
+        "contract_version": "5.1",
         "artifact_scope": "aggregate_only_synthetic_reliability_fixture",
         "synthetic_data": True,
         "source_rows_included": False,
@@ -1360,6 +1366,12 @@ def run_synthetic_benchmark(
                 "Pre-specified fail-closed heuristic bounds for five null draws per strict "
                 "split and their aggregate means; not p-values, family-wise-error control, "
                 "or a calibrated joint envelope."
+            ),
+            "feature_recurrence_audit": (
+                "Cross-partition equality recurrence for summary, body, and their combined "
+                "model input under the fingerprint-group manifests. Empty normalized values "
+                "are excluded and reported separately; token-set equality is not fuzzy or "
+                "semantic matching."
             ),
             "sensitivity_ranges": (
                 "Mean, sample standard deviation, minimum, and maximum across deterministic "
@@ -1414,6 +1426,7 @@ def run_synthetic_benchmark(
             ),
         },
         "data_audit": dataset_audit(frame, audit_labeled),
+        "feature_recurrence_audit": recurrence_audit,
         "protocols": protocol_reports,
         "protocol_sensitivity_ladder": sensitivity_ladder,
         "paired_strict_gap": strict_gap,
@@ -1431,6 +1444,7 @@ def run_synthetic_benchmark(
             ),
             "neutral_exclusion_stage": "inside_train_validation_test_after_manifest",
             "protocol_isolation_fail_closed": True,
+            "feature_recurrence_release_gate": recurrence_audit["release_gate"],
             "whole_timestamp_forward_boundaries": True,
             "conflict_retention_fail_closed": True,
             "conflict_reference_target_use": (
@@ -1462,7 +1476,7 @@ def run_synthetic_benchmark(
             "label_delay_release_gate": label_delay_release_gate,
             "legacy_metric_alias": (
                 "classification_metrics keeps pr_auc_attention for private adapter "
-                "compatibility; contract 5.0 reports emit only average_precision_attention"
+                "compatibility; contract 5.1 reports emit only average_precision_attention"
             ),
             "public_safety_validation": "performed_by_CLI_before_write",
         },
@@ -1492,6 +1506,12 @@ def run_synthetic_benchmark(
             (
                 "Hash-group protocols approximate deployment risks but cannot reproduce every "
                 "source shift."
+            ),
+            (
+                "The fingerprint-group protocol isolates equality of the combined summary-plus-"
+                "body input, but repeated summary or body values can still cross partitions. "
+                "Summary recurrence is amplified by eight authored templates and is exposure, "
+                "not by itself leakage."
             ),
             (
                 "A corrected split-first source audit exists privately, but source rights, "

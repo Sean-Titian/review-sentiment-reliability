@@ -268,7 +268,7 @@
       "test_rows_after_partition_local_neutral_exclusion": 415
     }
   },
-  "contract_version": "5.0",
+  "contract_version": "5.1",
   "data_audit": {
     "attention_prevalence": 0.2529147982,
     "conflicting_proxy_fingerprint_groups": 121,
@@ -341,6 +341,618 @@
     2909,
     4703
   ],
+  "feature_recurrence_audit": {
+    "empty_value_policy": "Empty normalized values are counted separately and excluded from recurrence groups.",
+    "evaluation_seeds": [
+      1103,
+      2909,
+      4703
+    ],
+    "fields": [
+      "summary",
+      "body",
+      "combined_input"
+    ],
+    "interpretation": {
+      "body": "Body-only recurrence can cross partitions even when the combined model input fingerprint is isolated.",
+      "combined_input": "The reference split isolates equality of the combined summary-plus-body input.",
+      "summary": "Authored summary templates are deliberately low-cardinality; recurrence is exposure, not by itself leakage."
+    },
+    "methods": {
+      "normalized_exact": "Equality after lowercase alphanumeric and whitespace normalization.",
+      "token_set_equality": "Equality after normalization, token deduplication, and sorting; not a threshold, fuzzy, or semantic near-duplicate method."
+    },
+    "methods_identical_on_fixture": {
+      "body": true,
+      "combined_input": true,
+      "summary": true
+    },
+    "reference_protocol": "fingerprint_group",
+    "release_gate": {
+      "checks": {
+        "audit_structure_complete": true,
+        "combined_input_exact_and_token_set_cross_partition_recurrence_zero": true,
+        "counts_and_shares_are_finite_nonnegative_and_consistent": true,
+        "evaluation_seeds_are_present_and_unique": true,
+        "row_counts_conserve_source_and_test": true,
+        "run_count_matches_evaluation_seeds": true,
+        "test_counts_are_consistent_source_subsets": true
+      },
+      "enforced": true,
+      "expected_runs": 3,
+      "observed_runs": 3,
+      "passed": true
+    },
+    "scope": "raw synthetic rows before partition-local neutral-rating exclusion; audit-only",
+    "split_runs": 3,
+    "summary": {
+      "body": {
+        "normalized_exact": {
+          "cross_partition_affected_non_empty_raw_row_share": {
+            "max": 0.2971108236,
+            "mean": 0.2912174788,
+            "min": 0.2854678741,
+            "runs": 3,
+            "std": 0.0058228055
+          },
+          "cross_partition_affected_non_empty_test_row_share": {
+            "max": 0.4279069767,
+            "mean": 0.39844916,
+            "min": 0.3799126638,
+            "runs": 3,
+            "std": 0.0257937967
+          },
+          "cross_partition_affected_raw_row_share": {
+            "max": 0.2870833333,
+            "mean": 0.2813888889,
+            "min": 0.2758333333,
+            "runs": 3,
+            "std": 0.0056262859
+          },
+          "cross_partition_affected_raw_rows": {
+            "max": 689.0,
+            "mean": 675.3333333333,
+            "min": 662.0,
+            "runs": 3,
+            "std": 13.503086067
+          },
+          "cross_partition_affected_test_row_share": {
+            "max": 0.4259259259,
+            "mean": 0.3883708782,
+            "min": 0.3617463617,
+            "runs": 3,
+            "std": 0.0334568603
+          },
+          "cross_partition_affected_test_rows": {
+            "max": 184.0,
+            "mean": 177.3333333333,
+            "min": 174.0,
+            "runs": 3,
+            "std": 5.7735026919
+          },
+          "cross_partition_groups": {
+            "max": 207.0,
+            "mean": 202.3333333333,
+            "min": 199.0,
+            "runs": 3,
+            "std": 4.1633319989
+          },
+          "empty_raw_rows": {
+            "max": 81.0,
+            "mean": 81.0,
+            "min": 81.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_test_rows": {
+            "max": 23.0,
+            "mean": 12.3333333333,
+            "min": 2.0,
+            "runs": 3,
+            "std": 10.5039675044
+          },
+          "non_empty_raw_rows": {
+            "max": 2319.0,
+            "mean": 2319.0,
+            "min": 2319.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_test_rows": {
+            "max": 458.0,
+            "mean": 445.6666666667,
+            "min": 430.0,
+            "runs": 3,
+            "std": 14.2945210949
+          },
+          "test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "unique_non_empty_groups": {
+            "max": 1305.0,
+            "mean": 1305.0,
+            "min": 1305.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "token_set_equality": {
+          "cross_partition_affected_non_empty_raw_row_share": {
+            "max": 0.2971108236,
+            "mean": 0.2912174788,
+            "min": 0.2854678741,
+            "runs": 3,
+            "std": 0.0058228055
+          },
+          "cross_partition_affected_non_empty_test_row_share": {
+            "max": 0.4279069767,
+            "mean": 0.39844916,
+            "min": 0.3799126638,
+            "runs": 3,
+            "std": 0.0257937967
+          },
+          "cross_partition_affected_raw_row_share": {
+            "max": 0.2870833333,
+            "mean": 0.2813888889,
+            "min": 0.2758333333,
+            "runs": 3,
+            "std": 0.0056262859
+          },
+          "cross_partition_affected_raw_rows": {
+            "max": 689.0,
+            "mean": 675.3333333333,
+            "min": 662.0,
+            "runs": 3,
+            "std": 13.503086067
+          },
+          "cross_partition_affected_test_row_share": {
+            "max": 0.4259259259,
+            "mean": 0.3883708782,
+            "min": 0.3617463617,
+            "runs": 3,
+            "std": 0.0334568603
+          },
+          "cross_partition_affected_test_rows": {
+            "max": 184.0,
+            "mean": 177.3333333333,
+            "min": 174.0,
+            "runs": 3,
+            "std": 5.7735026919
+          },
+          "cross_partition_groups": {
+            "max": 207.0,
+            "mean": 202.3333333333,
+            "min": 199.0,
+            "runs": 3,
+            "std": 4.1633319989
+          },
+          "empty_raw_rows": {
+            "max": 81.0,
+            "mean": 81.0,
+            "min": 81.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_test_rows": {
+            "max": 23.0,
+            "mean": 12.3333333333,
+            "min": 2.0,
+            "runs": 3,
+            "std": 10.5039675044
+          },
+          "non_empty_raw_rows": {
+            "max": 2319.0,
+            "mean": 2319.0,
+            "min": 2319.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_test_rows": {
+            "max": 458.0,
+            "mean": 445.6666666667,
+            "min": 430.0,
+            "runs": 3,
+            "std": 14.2945210949
+          },
+          "test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "unique_non_empty_groups": {
+            "max": 1305.0,
+            "mean": 1305.0,
+            "min": 1305.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "combined_input": {
+        "normalized_exact": {
+          "cross_partition_affected_non_empty_raw_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_non_empty_test_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_groups": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_raw_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_test_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_raw_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "unique_non_empty_groups": {
+            "max": 1731.0,
+            "mean": 1731.0,
+            "min": 1731.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "token_set_equality": {
+          "cross_partition_affected_non_empty_raw_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_non_empty_test_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_row_share": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_groups": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_raw_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_test_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_raw_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "unique_non_empty_groups": {
+            "max": 1731.0,
+            "mean": 1731.0,
+            "min": 1731.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      },
+      "summary": {
+        "normalized_exact": {
+          "cross_partition_affected_non_empty_raw_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_non_empty_test_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "cross_partition_groups": {
+            "max": 8.0,
+            "mean": 8.0,
+            "min": 8.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_raw_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_test_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_raw_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "unique_non_empty_groups": {
+            "max": 8.0,
+            "mean": 8.0,
+            "min": 8.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        },
+        "token_set_equality": {
+          "cross_partition_affected_non_empty_raw_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_non_empty_test_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_raw_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_row_share": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "cross_partition_affected_test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "cross_partition_groups": {
+            "max": 8.0,
+            "mean": 8.0,
+            "min": 8.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_raw_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "empty_test_rows": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_raw_rows": {
+            "max": 2400.0,
+            "mean": 2400.0,
+            "min": 2400.0,
+            "runs": 3,
+            "std": 0.0
+          },
+          "non_empty_test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "test_rows": {
+            "max": 481.0,
+            "mean": 458.0,
+            "min": 432.0,
+            "runs": 3,
+            "std": 24.6373699895
+          },
+          "unique_non_empty_groups": {
+            "max": 8.0,
+            "mean": 8.0,
+            "min": 8.0,
+            "runs": 3,
+            "std": 0.0
+          }
+        }
+      }
+    },
+    "target_bearing_fields_used": []
+  },
   "limitations": [
     "All scores come from authored synthetic text and demonstrate the evaluation system only.",
     "The source rating is the target oracle for this rating-derived proxy; when ratings are available at decision time, a text score may be operationally redundant. The proxy is not human-annotated sentiment or causal impact.",
@@ -348,6 +960,7 @@
     "The 5%, 10%, and 20% queue shares are pre-specified sensitivity scenarios, not validated staffing levels; no review cost, action value, or net benefit is modeled.",
     "Negative-control bounds are heuristic fail-closed sanity checks, not multiplicity-adjusted inferential tests.",
     "Hash-group protocols approximate deployment risks but cannot reproduce every source shift.",
+    "The fingerprint-group protocol isolates equality of the combined summary-plus-body input, but repeated summary or body values can still cross partitions. Summary recurrence is amplified by eight authored templates and is exposure, not by itself leakage.",
     "A corrected split-first source audit exists privately, but source rights, target validity, and public-safe aggregation still block any real-data metric release.",
     "Multi-seed min/max values describe protocol and optimizer sensitivity; they are not sampling confidence intervals.",
     "The conditional cluster-bootstrap interval holds one synthetic fitted model and test manifest fixed; it does not cover retraining, crossed dependence, source selection, temporal drift, or real-data generalization.",
@@ -359,6 +972,7 @@
     "brier": "Mean squared probability error; lower is better.",
     "budget_ranking_tie_policy": "A cutoff score tie uses fractional expected allocation, independent of row order. Stress and conditional-uncertainty summaries omit recall and lift when all scores tie because no model ranking exists.",
     "conditional_cluster_bootstrap": "A 95% percentile interval for one frozen fingerprint-group scoring rule, using near-text-fingerprint pairs resampling; separate from multi-seed and rolling-origin sensitivity ranges.",
+    "feature_recurrence_audit": "Cross-partition equality recurrence for summary, body, and their combined model input under the fingerprint-group manifests. Empty normalized values are excluded and reported separately; token-set equality is not fuzzy or semantic matching.",
     "label_delay_sensitivity": "Rolling-origin comparisons at pre-specified 0-, 14-, and 30-day proxy-label availability delays with identical test horizons. Delayed rows are embargoed from fitting and threshold selection; 14 and 30 days are authored scenarios, not observed service-level agreements.",
     "negative_control_sanity_gates": "Pre-specified fail-closed heuristic bounds for five null draws per strict split and their aggregate means; not p-values, family-wise-error control, or a calibrated joint envelope.",
     "queue_capacity_sensitivity": "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue capacities. Matched-seed ranges are descriptive; frozen-rule cluster bootstrap intervals are marginal, not simultaneous.",
@@ -11441,6 +12055,21 @@
     "conflict_reference_target_use": "audit-only after label-free split construction; never used for assignment",
     "conflict_retention_fail_closed": true,
     "delay_selected_post_hoc": false,
+    "feature_recurrence_release_gate": {
+      "checks": {
+        "audit_structure_complete": true,
+        "combined_input_exact_and_token_set_cross_partition_recurrence_zero": true,
+        "counts_and_shares_are_finite_nonnegative_and_consistent": true,
+        "evaluation_seeds_are_present_and_unique": true,
+        "row_counts_conserve_source_and_test": true,
+        "run_count_matches_evaluation_seeds": true,
+        "test_counts_are_consistent_source_subsets": true
+      },
+      "enforced": true,
+      "expected_runs": 3,
+      "observed_runs": 3,
+      "passed": true
+    },
     "label_delay_days": [
       0,
       14,
@@ -11498,7 +12127,7 @@
       "observed_window_placebo_gates": 12,
       "passed": true
     },
-    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 5.0 reports emit only average_precision_attention",
+    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 5.1 reports emit only average_precision_attention",
     "negative_control_gate": {
       "designs": {
         "test_label_alignment_placebo": {
