@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+import inspect
 import json
 
 import numpy as np
@@ -22,6 +24,32 @@ def _fixture() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     target[:2] = [0, 1]
     scores = np.clip(0.18 + 0.55 * target + rng.normal(0, 0.16, len(target)), 0.01, 0.99)
     return target, scores, clusters
+
+
+def _release_fixture() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(2026)
+    clusters = np.repeat([f"release-cluster-{index:03d}" for index in range(80)], 4)
+    target = np.tile([0, 1, 0, 1], 80)
+    scores = np.clip(
+        0.20 + 0.55 * target + rng.normal(0, 0.12, len(target)),
+        0.01,
+        0.99,
+    )
+    return target, scores, clusters
+
+
+@pytest.fixture(scope="module")
+def release_ready_result() -> dict[str, object]:
+    target, scores, clusters = _release_fixture()
+    return conditional_cluster_bootstrap(
+        target,
+        scores,
+        clusters,
+        train_prevalence=0.5,
+        draws=uncertainty_module.DEFAULT_BOOTSTRAP_DRAWS,
+        seed=10_013,
+        enforce_release_gate=True,
+    )
 
 
 def test_cluster_bootstrap_is_deterministic_order_invariant_and_aggregate_safe() -> None:
@@ -49,7 +77,10 @@ def test_cluster_bootstrap_is_deterministic_order_invariant_and_aggregate_safe()
     assert first["draws_attempted"] == first["draws_requested"] == 80
     assert first["draws_replenished"] == 0
     assert first["cluster_unit"] == "near_text_fingerprint"
-    assert first["interval_type"] == "marginal percentile, not simultaneous"
+    assert first["interval_type"] == (
+        "marginal percentile intervals plus one nominal lift-only Bonferroni "
+        "familywise capacity band"
+    )
     assert first["release_gate"]["enforced"] is False
     assert first["release_gate"]["passed"] is None
     assert first["release_gate"]["criteria_met"] is False
@@ -61,8 +92,21 @@ def test_cluster_bootstrap_is_deterministic_order_invariant_and_aggregate_safe()
         "release_contract_pre_specified"
     )
     assert first["capacity_curve"]["interval_scope"] == (
-        "marginal percentile, not simultaneous"
+        "precision, recall, and ordinary lift intervals are marginal; "
+        "familywise_lift_band is the only nominal simultaneous band and covers "
+        "lift_at_budget at the pre-specified 5%, 10%, and 20% capacities only"
     )
+    familywise = first["capacity_curve"]["familywise_lift_band"]
+    assert familywise["metric"] == "lift_at_budget"
+    assert familywise["family_members"] == [0.05, 0.10, 0.20]
+    assert familywise["common_resamples"] is True
+    assert familywise["covers_precision_or_recall"] is False
+    assert familywise["cross_metric_simultaneous_coverage"] is False
+    familywise_gate = first["release_gate"][
+        "familywise_capacity_lift_band_gate"
+    ]
+    assert familywise_gate["passed"] is None
+    assert familywise_gate["criteria_met"] is False
     assert first["capacity_curve"] == reordered["capacity_curve"]
     for metric, interval in first["intervals"].items():
         for field in ("estimate", "lower", "upper", "valid_draw_share"):
@@ -124,6 +168,130 @@ def test_capacity_curve_primary_point_and_intervals_are_exact_10pct_aliases() ->
     assert set(primary["conditional_intervals"]) == set(aliases)
 
 
+def test_familywise_lift_band_uses_bonferroni_two_sided_quantiles() -> None:
+    point_capacity_points = [
+        {"budget_share": share, "lift_at_budget": estimate}
+        for share, estimate in zip(
+            DEFAULT_CAPACITY_SHARES,
+            (1.1, 1.3, 1.5),
+            strict=True,
+        )
+    ]
+    sampled = {
+        share: {
+            "precision_at_budget": [],
+            "recall_at_budget": [],
+            "lift_at_budget": list(np.linspace(index, index + 1.0, 1_200)),
+        }
+        for index, share in enumerate(DEFAULT_CAPACITY_SHARES)
+    }
+    band = uncertainty_module._familywise_capacity_lift_band(
+        point_capacity_points,
+        sampled,
+        draws=1_200,
+        confidence_level=0.95,
+    )
+
+    tail = 0.05 / (2 * 3)
+    assert band["method"] == uncertainty_module.FAMILYWISE_CAPACITY_METHOD
+    assert band["metric"] == "lift_at_budget"
+    assert band["family_size"] == 3
+    assert band["family_members"] == [0.05, 0.10, 0.20]
+    assert band["family_confidence_level"] == pytest.approx(0.95)
+    assert band["coverage_interpretation"] == (
+        "nominal Bonferroni-adjusted percentile-bootstrap family coverage"
+    )
+    assert band["finite_sample_coverage_guarantee"] is False
+    assert band["per_interval_confidence_level"] == pytest.approx(1 - 0.05 / 3)
+    assert band["two_sided_tail_probability_per_interval"] == pytest.approx(tail)
+    assert band["common_resamples"] is True
+    assert band["common_valid_draws"] is True
+    assert band["covers_precision_or_recall"] is False
+    assert band["cross_metric_simultaneous_coverage"] is False
+    assert len(band["points"]) == 3
+    for index, point in enumerate(band["points"]):
+        assert set(point) == {
+            "budget_share",
+            "estimate",
+            "lower",
+            "upper",
+            "valid_draws",
+            "valid_draw_share",
+            "point_within_familywise_interval",
+        }
+        values = np.asarray(
+            sampled[point["budget_share"]]["lift_at_budget"], dtype=float
+        )
+        expected = np.quantile(values, [tail, 1 - tail], method="linear")
+        assert point["lower"] == pytest.approx(expected[0])
+        assert point["upper"] == pytest.approx(expected[1])
+        assert point["estimate"] == pytest.approx((1.1, 1.3, 1.5)[index])
+        assert point["valid_draws"] == 1_200
+        assert point["valid_draw_share"] == 1.0
+
+
+def test_release_familywise_band_is_complete_and_wider_than_marginal(
+    release_ready_result: dict[str, object],
+) -> None:
+    capacity_curve = release_ready_result["capacity_curve"]
+    band = capacity_curve["familywise_lift_band"]
+    marginal_by_share = {
+        point["budget_share"]: point for point in capacity_curve["points"]
+    }
+    assert [point["budget_share"] for point in band["points"]] == [
+        0.05,
+        0.10,
+        0.20,
+    ]
+    for point in band["points"]:
+        marginal = marginal_by_share[point["budget_share"]][
+            "conditional_intervals"
+        ]["lift_at_budget"]
+        assert point["lower"] <= marginal["lower"]
+        assert point["upper"] >= marginal["upper"]
+        assert point["estimate"] == marginal["estimate"]
+
+    gate = release_ready_result["release_gate"][
+        "familywise_capacity_lift_band_gate"
+    ]
+    assert gate["enforced"] is True
+    assert gate["passed"] is True
+    assert gate["criteria_met"] is True
+    assert all(gate["checks"].values())
+    assert gate["checks"]["nominal_coverage_scope_explicit"] is True
+    assert gate["point_containment_is_not_a_validity_requirement"] is True
+    assert release_ready_result["release_gate"]["passed"] is True
+
+
+def test_familywise_release_gate_fails_closed_when_band_is_tampered(
+    release_ready_result: dict[str, object],
+) -> None:
+    capacity_curve = release_ready_result["capacity_curve"]
+    marginal_points = capacity_curve["points"]
+
+    wrong_method = copy.deepcopy(capacity_curve["familywise_lift_band"])
+    wrong_method["method"] = "unregistered interval method"
+    with pytest.raises(RuntimeError, match="method_exact_default"):
+        uncertainty_module._familywise_capacity_lift_release_gate(
+            wrong_method,
+            marginal_points,
+            enforced=True,
+        )
+
+    too_narrow = copy.deepcopy(capacity_curve["familywise_lift_band"])
+    first_share = too_narrow["points"][0]["budget_share"]
+    first_marginal = next(
+        point for point in marginal_points if point["budget_share"] == first_share
+    )["conditional_intervals"]["lift_at_budget"]
+    too_narrow["points"][0]["lower"] = first_marginal["lower"] + 1e-6
+    with pytest.raises(RuntimeError, match="familywise_contains_marginal_intervals"):
+        uncertainty_module._familywise_capacity_lift_release_gate(
+            too_narrow,
+            marginal_points,
+            enforced=True,
+        )
+
+
 def test_capacity_curve_uses_one_joint_call_for_each_common_resample(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -169,6 +337,16 @@ def test_capacity_curve_uses_one_joint_call_for_each_common_resample(
         for interval in point["conditional_intervals"].values():
             assert interval["valid_draws"] == 20
             assert interval["valid_draw_share"] == 1.0
+    familywise = result["capacity_curve"]["familywise_lift_band"]
+    assert familywise["common_resamples"] is True
+    assert familywise["common_valid_draws"] is True
+    assert all(point["valid_draws"] == 20 for point in familywise["points"])
+    assert result["release_gate"]["familywise_capacity_lift_band_gate"][
+        "passed"
+    ] is None
+    assert result["release_gate"]["familywise_capacity_lift_band_gate"][
+        "criteria_met"
+    ] is False
 
 
 def test_weighted_metrics_match_explicit_cluster_replication() -> None:
@@ -232,6 +410,12 @@ def test_all_tied_scores_omit_budget_intervals() -> None:
     assert result["ranking_at_budget_defined"] is False
     assert not any("budget" in metric for metric in result["intervals"])
     assert result["capacity_curve"]["points"] == []
+    assert result["capacity_curve"]["familywise_lift_band"]["points"] == []
+    familywise_gate = result["release_gate"][
+        "familywise_capacity_lift_band_gate"
+    ]
+    assert familywise_gate["passed"] is None
+    assert familywise_gate["criteria_met"] is False
 
 
 def test_release_gate_rejects_tied_scores_without_complete_capacity_points() -> None:
@@ -245,7 +429,7 @@ def test_release_gate_rejects_tied_scores_without_complete_capacity_points() -> 
             scores,
             clusters,
             train_prevalence=0.5,
-            draws=2_000,
+            draws=uncertainty_module.DEFAULT_BOOTSTRAP_DRAWS,
             enforce_release_gate=True,
         )
 
@@ -287,7 +471,7 @@ def test_release_gate_requires_exact_default_capacity_shares() -> None:
             scores,
             clusters,
             train_prevalence=0.28,
-            draws=2_000,
+            draws=uncertainty_module.DEFAULT_BOOTSTRAP_DRAWS,
             capacity_shares=(0.05, 0.10, 0.25),
             enforce_release_gate=True,
         )
@@ -310,7 +494,7 @@ def test_release_gate_locks_interval_level_and_cluster_unit(
             scores,
             clusters,
             train_prevalence=0.28,
-            draws=2_000,
+            draws=uncertainty_module.DEFAULT_BOOTSTRAP_DRAWS,
             enforce_release_gate=True,
             **override,  # type: ignore[arg-type]
         )
@@ -431,15 +615,19 @@ def test_cluster_bootstrap_rejects_missing_or_single_cluster() -> None:
         )
 
 
-def test_release_gate_requires_two_thousand_draws_inside_bootstrap() -> None:
+def test_default_and_release_gate_require_twenty_thousand_draws() -> None:
+    signature = inspect.signature(conditional_cluster_bootstrap)
+    assert uncertainty_module.DEFAULT_BOOTSTRAP_DRAWS == 20_000
+    assert signature.parameters["draws"].default == 20_000
+
     target, scores, clusters = _fixture()
-    with pytest.raises(ValueError, match="at least 2000 draws"):
+    with pytest.raises(ValueError, match="at least 20000 draws"):
         conditional_cluster_bootstrap(
             target,
             scores,
             clusters,
             train_prevalence=0.28,
-            draws=1_999,
+            draws=19_999,
             enforce_release_gate=True,
         )
 

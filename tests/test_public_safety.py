@@ -125,7 +125,7 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     report_path = ROOT / "reports" / "synthetic-benchmark.json"
     assert report_path.exists()
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["contract_version"] == "5.1"
+    assert report["contract_version"] == "5.2"
     assert report["synthetic_data"] is True
     assert report["source_rows_included"] is False
     assert report["source_trained_artifacts_included"] is False
@@ -169,6 +169,9 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     assert capacity_null_scope.startswith("heuristic train-label permutation")
     assert all(share in capacity_null_scope for share in ("5%", "10%", "20%"))
     bootstrap_gate = report["conditional_uncertainty"]["result"]["release_gate"]
+    assert report["runtime_controls"]["conditional_uncertainty_release_gate"] == (
+        bootstrap_gate
+    )
     assert bootstrap_gate["enforced"] is True
     assert bootstrap_gate["passed"] is True
     assert bootstrap_gate["capacity_shares_exact_default"] is True
@@ -180,9 +183,30 @@ def test_tracked_synthetic_benchmark_is_aggregate_safe() -> None:
     ]
     assert [point["budget_share"] for point in capacity_points] == [0.05, 0.10, 0.20]
     assert all(
-        point["conditional_intervals"]["lift_at_budget"]["valid_draws"] == 2_000
+        point["conditional_intervals"]["lift_at_budget"]["valid_draws"] == 20_000
         for point in capacity_points
     )
+    familywise = report["conditional_uncertainty"]["result"]["capacity_curve"][
+        "familywise_lift_band"
+    ]
+    assert capacity["familywise_lift_band_path"].endswith("familywise_lift_band")
+    assert familywise["metric"] == "lift_at_budget"
+    assert familywise["family_members"] == [0.05, 0.10, 0.20]
+    assert familywise["family_confidence_level"] == 0.95
+    assert familywise["coverage_interpretation"].startswith("nominal Bonferroni")
+    assert familywise["finite_sample_coverage_guarantee"] is False
+    assert familywise["per_interval_confidence_level"] == pytest.approx(
+        1 - 0.05 / 3
+    )
+    assert familywise["common_resamples"] is True
+    assert familywise["covers_precision_or_recall"] is False
+    assert familywise["cross_metric_simultaneous_coverage"] is False
+    assert all(point["valid_draws"] == 20_000 for point in familywise["points"])
+    familywise_gate = bootstrap_gate["familywise_capacity_lift_band_gate"]
+    assert familywise_gate["enforced"] is True
+    assert familywise_gate["passed"] is True
+    assert familywise_gate["criteria_met"] is True
+    assert all(familywise_gate["checks"].values())
     assert report["rolling_origin_backtest"]["summary"][
         "all_test_horizons_non_overlapping"
     ] is True

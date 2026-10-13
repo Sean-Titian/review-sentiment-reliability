@@ -35,7 +35,7 @@ def test_end_to_end_report_is_aggregate_safe_and_complete() -> None:
     assert strict["negative_control_train_label_permutation"] is not None
     assert strict["placebo_test_label_alignment"] is not None
     assert strict["conflict_retention_gate"]["all_runs_passed"] is True
-    assert report["contract_version"] == "5.1"
+    assert report["contract_version"] == "5.2"
     assert report["runtime_controls"]["protocol_isolation_fail_closed"] is True
     recurrence = report["feature_recurrence_audit"]
     assert recurrence["target_bearing_fields_used"] == []
@@ -440,10 +440,10 @@ def test_release_gate_requires_exactly_five_permutations_per_strict_split(
         )
 
 
-def test_release_gate_requires_two_thousand_cluster_bootstrap_draws() -> None:
-    with pytest.raises(ValueError, match="2,000 cluster-bootstrap draws"):
+def test_release_gate_requires_twenty_thousand_cluster_bootstrap_draws() -> None:
+    with pytest.raises(ValueError, match="20,000 cluster-bootstrap draws"):
         run_synthetic_benchmark(
-            bootstrap_draws=1_999,
+            bootstrap_draws=19_999,
             enforce_negative_control=True,
         )
 

@@ -8,7 +8,60 @@
       "capacity_curve": {
         "capacity_selected_post_hoc": false,
         "capacity_selection_mode": "release_contract_pre_specified",
-        "interval_scope": "marginal percentile, not simultaneous",
+        "familywise_lift_band": {
+          "common_resamples": true,
+          "common_valid_draws": true,
+          "coverage_interpretation": "nominal Bonferroni-adjusted percentile-bootstrap family coverage",
+          "covers_precision_or_recall": false,
+          "cross_metric_simultaneous_coverage": false,
+          "draws_attempted": 20000,
+          "expected_samples_per_tail": 166.6666666667,
+          "family_confidence_level": 0.95,
+          "family_members": [
+            0.05,
+            0.1,
+            0.2
+          ],
+          "family_size": 3,
+          "finite_sample_coverage_guarantee": false,
+          "method": "Bonferroni-adjusted percentile pairs cluster bootstrap band",
+          "metric": "lift_at_budget",
+          "minimum_expected_samples_per_tail": 100.0,
+          "per_interval_confidence_level": 0.9833333333,
+          "points": [
+            {
+              "budget_share": 0.05,
+              "estimate": 1.1511789182,
+              "lower": 0.2291137354,
+              "point_within_familywise_interval": true,
+              "upper": 2.3372238872,
+              "valid_draw_share": 1.0,
+              "valid_draws": 20000
+            },
+            {
+              "budget_share": 0.1,
+              "estimate": 1.4389736477,
+              "lower": 0.7450409142,
+              "point_within_familywise_interval": true,
+              "upper": 2.3151320374,
+              "valid_draw_share": 1.0,
+              "valid_draws": 20000
+            },
+            {
+              "budget_share": 0.2,
+              "estimate": 1.8446601942,
+              "lower": 1.2910294786,
+              "point_within_familywise_interval": true,
+              "upper": 2.3712080925,
+              "valid_draw_share": 1.0,
+              "valid_draws": 20000
+            }
+          ],
+          "quantile_method": "linear",
+          "simultaneous_scope": "nominal familywise coverage for lift_at_budget across the pre-specified 5%, 10%, and 20% capacities only",
+          "two_sided_tail_probability_per_interval": 0.0083333333
+        },
+        "interval_scope": "precision, recall, and ordinary lift intervals are marginal; familywise_lift_band is the only nominal simultaneous band and covers lift_at_budget at the pre-specified 5%, 10%, and 20% capacities only",
         "matches_release_capacity_contract": true,
         "points": [
           {
@@ -16,27 +69,27 @@
             "conditional_intervals": {
               "lift_at_budget": {
                 "estimate": 1.1511789182,
-                "lower": 0.4769961991,
+                "lower": 0.4224924012,
                 "point_within_percentile_interval": true,
-                "upper": 2.1804210123,
+                "upper": 2.1331210103,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               },
               "precision_at_budget": {
                 "estimate": 0.2857142857,
                 "lower": 0.1,
                 "point_within_percentile_interval": true,
-                "upper": 0.5238721805,
+                "upper": 0.5238095238,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               },
               "recall_at_budget": {
                 "estimate": 0.0582524272,
-                "lower": 0.024089214,
+                "lower": 0.0215053763,
                 "point_within_percentile_interval": true,
-                "upper": 0.1111370717,
+                "upper": 0.1086956522,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               }
             },
             "point_estimates": {
@@ -57,27 +110,27 @@
             "conditional_intervals": {
               "lift_at_budget": {
                 "estimate": 1.4389736477,
-                "lower": 0.8835160485,
+                "lower": 0.8662910619,
                 "point_within_percentile_interval": true,
-                "upper": 2.168383299,
+                "upper": 2.1491073674,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               },
               "precision_at_budget": {
                 "estimate": 0.3571428571,
                 "lower": 0.2093023256,
                 "point_within_percentile_interval": true,
-                "upper": 0.5454545455,
+                "upper": 0.5365853659,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               },
               "recall_at_budget": {
                 "estimate": 0.145631068,
-                "lower": 0.0891034103,
+                "lower": 0.0873786408,
                 "point_within_percentile_interval": true,
-                "upper": 0.2195121951,
+                "upper": 0.2173913043,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               }
             },
             "point_estimates": {
@@ -98,27 +151,27 @@
             "conditional_intervals": {
               "lift_at_budget": {
                 "estimate": 1.8446601942,
-                "lower": 1.4003264179,
+                "lower": 1.3859543437,
                 "point_within_percentile_interval": true,
-                "upper": 2.2919009427,
+                "upper": 2.2709143636,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               },
               "precision_at_budget": {
                 "estimate": 0.4578313253,
-                "lower": 0.3249542683,
+                "lower": 0.3253012048,
                 "point_within_percentile_interval": true,
-                "upper": 0.5813953488,
+                "upper": 0.5747126437,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               },
               "recall_at_budget": {
                 "estimate": 0.3689320388,
-                "lower": 0.2812435434,
+                "lower": 0.2788461538,
                 "point_within_percentile_interval": true,
-                "upper": 0.4608031674,
+                "upper": 0.4563106796,
                 "valid_draw_share": 1.0,
-                "valid_draws": 2000
+                "valid_draws": 20000
               }
             },
             "point_estimates": {
@@ -148,83 +201,83 @@
       "conditioning": "fixed fitted scoring rule, split manifest, and authored synthetic test fixture after partition-local 3-star exclusion",
       "confidence_level": 0.95,
       "degenerate_class_draws": 0,
-      "draws_attempted": 2000,
+      "draws_attempted": 20000,
       "draws_replenished": 0,
-      "draws_requested": 2000,
+      "draws_requested": 20000,
       "effective_clusters": 209.2648845687,
-      "interval_type": "marginal percentile, not simultaneous",
+      "interval_type": "marginal percentile intervals plus one nominal lift-only Bonferroni familywise capacity band",
       "intervals": {
         "attention_prevalence": {
           "estimate": 0.2481927711,
-          "lower": 0.2019698441,
+          "lower": 0.2039911308,
           "point_within_percentile_interval": true,
-          "upper": 0.2925016487,
+          "upper": 0.2928052995,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "average_precision_attention": {
           "estimate": 0.3940326113,
-          "lower": 0.3162300662,
+          "lower": 0.3170119754,
           "point_within_percentile_interval": true,
-          "upper": 0.4979153539,
+          "upper": 0.4967911867,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "average_precision_minus_prevalence": {
           "estimate": 0.1458398402,
-          "lower": 0.0915962368,
+          "lower": 0.0915606611,
           "point_within_percentile_interval": true,
-          "upper": 0.2333634781,
+          "upper": 0.2314102867,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "average_precision_over_prevalence": {
           "estimate": 1.587607123,
-          "lower": 1.378145067,
+          "lower": 1.3710626892,
           "point_within_percentile_interval": true,
-          "upper": 1.9608211021,
+          "upper": 1.942614945,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "brier": {
           "estimate": 0.170112757,
-          "lower": 0.15001525,
+          "lower": 0.1507161741,
           "point_within_percentile_interval": true,
-          "upper": 0.1892220029,
+          "upper": 0.1899174233,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "brier_improvement_vs_train_prevalence": {
           "estimate": 0.016512943,
-          "lower": 0.0025458141,
+          "lower": 0.0030298848,
           "point_within_percentile_interval": true,
-          "upper": 0.0303305992,
+          "upper": 0.0302116427,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "lift_at_10pct_budget": {
           "estimate": 1.4389736477,
-          "lower": 0.8835160485,
+          "lower": 0.8662910619,
           "point_within_percentile_interval": true,
-          "upper": 2.168383299,
+          "upper": 2.1491073674,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "precision_at_10pct_budget": {
           "estimate": 0.3571428571,
           "lower": 0.2093023256,
           "point_within_percentile_interval": true,
-          "upper": 0.5454545455,
+          "upper": 0.5365853659,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         },
         "recall_at_10pct_budget": {
           "estimate": 0.145631068,
-          "lower": 0.0891034103,
+          "lower": 0.0873786408,
           "point_within_percentile_interval": true,
-          "upper": 0.2195121951,
+          "upper": 0.2173913043,
           "valid_draw_share": 1.0,
-          "valid_draws": 2000
+          "valid_draws": 20000
         }
       },
       "largest_cluster_share": 0.0192771084,
@@ -243,6 +296,46 @@
         "criteria_met": true,
         "draw_count_passed": true,
         "enforced": true,
+        "familywise_capacity_lift_band_gate": {
+          "all_points_within_familywise_intervals_diagnostic": true,
+          "checks": {
+            "common_resamples": true,
+            "common_valid_draws": true,
+            "draw_count_passed": true,
+            "expected_tail_samples_match_valid_draws": true,
+            "family_confidence_level_exact_default": true,
+            "family_members_exact_default": true,
+            "family_points_complete": true,
+            "family_size_exact_default": true,
+            "familywise_contains_marginal_intervals": true,
+            "intervals_finite_and_ordered": true,
+            "lift_only_scope_explicit": true,
+            "method_exact_default": true,
+            "metric_exact_default": true,
+            "nominal_coverage_scope_explicit": true,
+            "per_interval_confidence_exact_default": true,
+            "point_estimates_match_marginal": true,
+            "quantile_method_exact_default": true,
+            "tail_probability_exact_default": true,
+            "tail_resolution_passed": true,
+            "valid_draw_accounting_consistent": true,
+            "valid_draw_share_passed": true
+          },
+          "criteria_met": true,
+          "enforced": true,
+          "minimum_draws": 20000,
+          "minimum_expected_samples_per_tail": 100.0,
+          "passed": true,
+          "point_containment_is_not_a_validity_requirement": true,
+          "required_family_confidence_level": 0.95,
+          "required_family_members": [
+            0.05,
+            0.1,
+            0.2
+          ],
+          "required_method": "Bonferroni-adjusted percentile pairs cluster bootstrap band",
+          "required_metric": "lift_at_budget"
+        },
         "intervals_finite_and_ordered": true,
         "passed": true,
         "point_containment_is_not_a_validity_requirement": true,
@@ -257,7 +350,7 @@
         "thresholds": {
           "maximum_largest_cluster_share": 0.2,
           "minimum_clusters": 30,
-          "minimum_draws": 2000,
+          "minimum_draws": 20000,
           "minimum_effective_clusters": 20.0,
           "minimum_rows_per_class": 50,
           "minimum_valid_draw_share": 0.95
@@ -268,7 +361,7 @@
       "test_rows_after_partition_local_neutral_exclusion": 415
     }
   },
-  "contract_version": "5.1",
+  "contract_version": "5.2",
   "data_audit": {
     "attention_prevalence": 0.2529147982,
     "conflicting_proxy_fingerprint_groups": 121,
@@ -963,7 +1056,7 @@
     "The fingerprint-group protocol isolates equality of the combined summary-plus-body input, but repeated summary or body values can still cross partitions. Summary recurrence is amplified by eight authored templates and is exposure, not by itself leakage.",
     "A corrected split-first source audit exists privately, but source rights, target validity, and public-safe aggregation still block any real-data metric release.",
     "Multi-seed min/max values describe protocol and optimizer sensitivity; they are not sampling confidence intervals.",
-    "The conditional cluster-bootstrap interval holds one synthetic fitted model and test manifest fixed; it does not cover retraining, crossed dependence, source selection, temporal drift, or real-data generalization.",
+    "The conditional cluster-bootstrap intervals and lift-only capacity-family band hold one synthetic fitted model and test manifest fixed; they do not cover retraining, crossed dependence, source selection, temporal drift, or real-data generalization. The nominal family-band claim does not extend to precision, recall, cross-metric selection, capacity optimality, staffing, or business value.",
     "Rolling-origin windows preserve chronology but allow recurring text, users, and products across time; those overlaps are audited rather than removed.",
     "Label-availability timestamps were not observed. The 14- and 30-day delays are authored stress scenarios, not validated operational SLAs, and their paired rolling-origin ranges are not confidence intervals."
   ],
@@ -971,11 +1064,11 @@
     "average_precision_attention": "Non-interpolated average precision from scikit-learn; prevalence is the no-skill reference for the attention class.",
     "brier": "Mean squared probability error; lower is better.",
     "budget_ranking_tie_policy": "A cutoff score tie uses fractional expected allocation, independent of row order. Stress and conditional-uncertainty summaries omit recall and lift when all scores tie because no model ranking exists.",
-    "conditional_cluster_bootstrap": "A 95% percentile interval for one frozen fingerprint-group scoring rule, using near-text-fingerprint pairs resampling; separate from multi-seed and rolling-origin sensitivity ranges.",
+    "conditional_cluster_bootstrap": "Marginal 95% percentile intervals for one frozen fingerprint-group scoring rule, plus one nominal 95% Bonferroni-adjusted bootstrap family band limited to lift_at_budget at the pre-specified 5%, 10%, and 20% capacities. Both use common one-way token-set-equality fingerprint pairs resamples and remain separate from multi-seed and rolling-origin sensitivity ranges.",
     "feature_recurrence_audit": "Cross-partition equality recurrence for summary, body, and their combined model input under the fingerprint-group manifests. Empty normalized values are excluded and reported separately; token-set equality is not fuzzy or semantic matching.",
     "label_delay_sensitivity": "Rolling-origin comparisons at pre-specified 0-, 14-, and 30-day proxy-label availability delays with identical test horizons. Delayed rows are embargoed from fitting and threshold selection; 14 and 30 days are authored scenarios, not observed service-level agreements.",
     "negative_control_sanity_gates": "Pre-specified fail-closed heuristic bounds for five null draws per strict split and their aggregate means; not p-values, family-wise-error control, or a calibrated joint envelope.",
-    "queue_capacity_sensitivity": "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue capacities. Matched-seed ranges are descriptive; frozen-rule cluster bootstrap intervals are marginal, not simultaneous.",
+    "queue_capacity_sensitivity": "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue capacities. Matched-seed ranges are descriptive. Precision, recall, and ordinary lift intervals are marginal; only the separately labeled lift capacity family has nominal simultaneous 95% Bonferroni coverage.",
     "roc_auc_supplementary": "Ranking metric reported only as a supplementary discrimination view.",
     "sensitivity_ranges": "Mean, sample standard deviation, minimum, and maximum across deterministic runs; not confidence intervals."
   },
@@ -7845,6 +7938,7 @@
   "queue_capacity_sensitivity": {
     "capacity_selected_post_hoc": false,
     "conditional_interval_path": "conditional_uncertainty.result.capacity_curve.points",
+    "familywise_lift_band_path": "conditional_uncertainty.result.capacity_curve.familywise_lift_band",
     "interpretation": "Pre-specified workload scenarios on an authored synthetic fixture; not observed staffing capacity, a post-hoc optimum, or an estimate of business value.",
     "matched_evaluation_seeds": [
       1103,
@@ -12031,6 +12125,46 @@
       "criteria_met": true,
       "draw_count_passed": true,
       "enforced": true,
+      "familywise_capacity_lift_band_gate": {
+        "all_points_within_familywise_intervals_diagnostic": true,
+        "checks": {
+          "common_resamples": true,
+          "common_valid_draws": true,
+          "draw_count_passed": true,
+          "expected_tail_samples_match_valid_draws": true,
+          "family_confidence_level_exact_default": true,
+          "family_members_exact_default": true,
+          "family_points_complete": true,
+          "family_size_exact_default": true,
+          "familywise_contains_marginal_intervals": true,
+          "intervals_finite_and_ordered": true,
+          "lift_only_scope_explicit": true,
+          "method_exact_default": true,
+          "metric_exact_default": true,
+          "nominal_coverage_scope_explicit": true,
+          "per_interval_confidence_exact_default": true,
+          "point_estimates_match_marginal": true,
+          "quantile_method_exact_default": true,
+          "tail_probability_exact_default": true,
+          "tail_resolution_passed": true,
+          "valid_draw_accounting_consistent": true,
+          "valid_draw_share_passed": true
+        },
+        "criteria_met": true,
+        "enforced": true,
+        "minimum_draws": 20000,
+        "minimum_expected_samples_per_tail": 100.0,
+        "passed": true,
+        "point_containment_is_not_a_validity_requirement": true,
+        "required_family_confidence_level": 0.95,
+        "required_family_members": [
+          0.05,
+          0.1,
+          0.2
+        ],
+        "required_method": "Bonferroni-adjusted percentile pairs cluster bootstrap band",
+        "required_metric": "lift_at_budget"
+      },
       "intervals_finite_and_ordered": true,
       "passed": true,
       "point_containment_is_not_a_validity_requirement": true,
@@ -12045,7 +12179,7 @@
       "thresholds": {
         "maximum_largest_cluster_share": 0.2,
         "minimum_clusters": 30,
-        "minimum_draws": 2000,
+        "minimum_draws": 20000,
         "minimum_effective_clusters": 20.0,
         "minimum_rows_per_class": 50,
         "minimum_valid_draw_share": 0.95
@@ -12127,7 +12261,7 @@
       "observed_window_placebo_gates": 12,
       "passed": true
     },
-    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 5.1 reports emit only average_precision_attention",
+    "legacy_metric_alias": "classification_metrics keeps pr_auc_attention for private adapter compatibility; contract 5.2 reports emit only average_precision_attention",
     "negative_control_gate": {
       "designs": {
         "test_label_alignment_placebo": {

@@ -1207,7 +1207,8 @@ def run_synthetic_benchmark(
         )
     if enforce_negative_control and bootstrap_draws < DEFAULT_BOOTSTRAP_DRAWS:
         raise ValueError(
-            "Release-gated benchmark requires at least 2,000 cluster-bootstrap draws"
+            "Release-gated benchmark requires at least "
+            f"{DEFAULT_BOOTSTRAP_DRAWS:,} cluster-bootstrap draws"
         )
     required_protocols = {"row_random", "fingerprint_group", "forward_time"}
     missing_protocols = required_protocols - set(protocols)
@@ -1305,6 +1306,9 @@ def run_synthetic_benchmark(
             [run["seeded_random_capacity_curve"] for run in strict_runs]
         ),
         "conditional_interval_path": "conditional_uncertainty.result.capacity_curve.points",
+        "familywise_lift_band_path": (
+            "conditional_uncertainty.result.capacity_curve.familywise_lift_band"
+        ),
         "negative_control_gate_path": "runtime_controls.negative_control_gate.designs",
         "interpretation": (
             "Pre-specified workload scenarios on an authored synthetic fixture; not observed "
@@ -1327,7 +1331,7 @@ def run_synthetic_benchmark(
     )
 
     return {
-        "contract_version": "5.1",
+        "contract_version": "5.2",
         "artifact_scope": "aggregate_only_synthetic_reliability_fixture",
         "synthetic_data": True,
         "source_rows_included": False,
@@ -1347,14 +1351,17 @@ def run_synthetic_benchmark(
                 "when all scores tie because no model ranking exists."
             ),
             "conditional_cluster_bootstrap": (
-                "A 95% percentile interval for one frozen fingerprint-group scoring rule, "
-                "using near-text-fingerprint pairs resampling; separate from multi-seed and "
-                "rolling-origin sensitivity ranges."
+                "Marginal 95% percentile intervals for one frozen fingerprint-group scoring "
+                "rule, plus one nominal 95% Bonferroni-adjusted bootstrap family band limited "
+                "to lift_at_budget at the pre-specified 5%, 10%, and 20% capacities. Both use "
+                "common one-way token-set-equality fingerprint pairs resamples and remain "
+                "separate from multi-seed and rolling-origin sensitivity ranges."
             ),
             "queue_capacity_sensitivity": (
                 "Precision, recall, and lift at pre-specified 5%, 10%, and 20% review-queue "
-                "capacities. Matched-seed ranges are descriptive; frozen-rule cluster "
-                "bootstrap intervals are marginal, not simultaneous."
+                "capacities. Matched-seed ranges are descriptive. Precision, recall, and "
+                "ordinary lift intervals are marginal; only the separately labeled lift "
+                "capacity family has nominal simultaneous 95% Bonferroni coverage."
             ),
             "label_delay_sensitivity": (
                 "Rolling-origin comparisons at pre-specified 0-, 14-, and 30-day proxy-label "
@@ -1476,7 +1483,7 @@ def run_synthetic_benchmark(
             "label_delay_release_gate": label_delay_release_gate,
             "legacy_metric_alias": (
                 "classification_metrics keeps pr_auc_attention for private adapter "
-                "compatibility; contract 5.1 reports emit only average_precision_attention"
+                "compatibility; contract 5.2 reports emit only average_precision_attention"
             ),
             "public_safety_validation": "performed_by_CLI_before_write",
         },
@@ -1523,9 +1530,12 @@ def run_synthetic_benchmark(
                 "not sampling confidence intervals."
             ),
             (
-                "The conditional cluster-bootstrap interval holds one synthetic fitted model "
-                "and test manifest fixed; it does not cover retraining, crossed dependence, "
-                "source selection, temporal drift, or real-data generalization."
+                "The conditional cluster-bootstrap intervals and lift-only capacity-family "
+                "band hold one synthetic fitted model and test manifest fixed; they do not "
+                "cover retraining, crossed dependence, source selection, temporal drift, "
+                "or real-data generalization. The nominal family-band claim does not extend to "
+                "precision, recall, cross-metric selection, capacity optimality, staffing, "
+                "or business value."
             ),
             (
                 "Rolling-origin windows preserve chronology but allow recurring text, users, "

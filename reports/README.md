@@ -12,7 +12,7 @@ metadata, counts, proportions, average precision and calibration metrics,
 descriptive multi-seed ranges, fail-closed overlap gates, two permutation-null
 designs, four rolling-origin windows replayed under pre-specified 0/14/30-day
 label-delay scenarios, per-delay temporal label placebos, pre-specified
-5%/10%/20% queue-capacity curves, one joint conditional near-fingerprint
+5%/10%/20% queue-capacity curves, one joint conditional token-set-equality fingerprint
 cluster-bootstrap interval set, stress diagnostics, and a target-free
 feature-level exact/token-set recurrence audit over the three strict manifests.
 The audit reports aggregate counts and shares for summary, body, and combined
@@ -24,15 +24,18 @@ serialized floating-point values are canonicalized to 10 decimal places.
 
 The numbers demonstrate that the reliability harness runs on an authored
 synthetic fixture; they are not estimates of real review performance. Multi-seed
-and rolling-origin ranges are descriptive, not confidence intervals. Contract
-5.1 retains the frozen strict-split percentile intervals as conditional
-on one fitted model, manifest, and synthetic test fixture. The three capacity
-intervals use the same 2,000 resamples and are marginal, not a simultaneous band;
-matched-seed ranges remain descriptive. They do not cover
-retraining, crossed user/product dependence, source selection, temporal drift, or
-real-data generalization.
+and rolling-origin ranges are descriptive, not confidence intervals. Contract 5.2
+retains the frozen strict-split marginal 95% percentile intervals as conditional
+on one fitted model, manifest, and synthetic test fixture. The three capacities
+use the same 20,000 resamples. One separately labeled nominal 95%
+Bonferroni-adjusted bootstrap family band covers `lift_at_budget` across 5%, 10%,
+and 20% only; precision, recall,
+cross-metric selection, and pairwise capacity comparisons are outside that claim.
+Matched-seed ranges remain descriptive. None of the intervals cover retraining,
+crossed user/product dependence, source selection, temporal drift, or real-data
+generalization.
 
-Package 0.6.0 adds a fail-closed feature-recurrence audit. Across all three
+Package 0.7.0 retains the 0.6.0 fail-closed feature-recurrence audit. Across all three
 strict manifests, combined-input recurrence is zero for both normalized-exact
 and token-set equality. The non-zero summary/body results are low-cardinality
 feature exposure, not a target-leakage claim, and the equality-only audit is not
@@ -44,8 +47,8 @@ converted 18 inherited missing bodies into the literal string `"None"`. The
 canonical fixture now keeps all 81 missing bodies as native nulls, and the tracked
 report was regenerated in full. Its values supersede the 0.5.0 synthetic report;
 changes are not presented as model improvement. The model, existing metrics, and
-decision contract are unchanged; evaluation contract 5.1 adds only the recurrence
-evidence and gate.
+decision contract are unchanged. Evaluation contract 5.1 added the recurrence
+evidence and gate; contract 5.2 retains them while adding the lift-family band.
 
 The 14- and 30-day label delays are authored sensitivity scenarios with the same
 four test horizons as the zero-day reference. The report records five-way raw-row
@@ -55,7 +58,7 @@ in one pooled gate. No label-
 availability timestamp was observed, so these scenarios are not measured service
 levels, optimal embargoes, or evidence of an operational target.
 
-Contract 5.1 retains scikit-learn's non-interpolated metric
+Contract 5.2 retains scikit-learn's non-interpolated metric
 `average_precision_attention`; it does not label it generic PR-AUC. A top-budget
 cutoff tie receives fractional expected allocation so input order cannot choose
 among equal scores. The 5%, 10%, and 20% workloads are pre-specified scenarios,

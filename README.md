@@ -16,8 +16,25 @@ model, or real-data performance claim.
 
 ## What this milestone establishes
 
-Package `0.6.0` extends evaluation contract `5.1` with a fail-closed,
-feature-level recurrence audit without adding source data or a larger model:
+Package `0.7.0` extends evaluation contract `5.2` with capacity-family
+uncertainty without adding source data or a larger model:
+
+- The canonical frozen fingerprint-group scoring rule now uses 20,000 common
+  token-set-equality fingerprint-cluster resamples at each pre-specified 5%,
+  10%, and 20% queue share.
+- Marginal 95% percentile intervals remain available for precision, recall, and
+  lift. A separate nominal 95% Bonferroni-adjusted bootstrap family band covers
+  only the three `lift_at_budget` estimates; each member uses a 98.333%
+  percentile interval.
+- The release gate fixes the metric, family members, confidence level, quantile
+  method, common-draw contract, minimum draw count, tail resolution, finite
+  ordered bounds, and containment of the marginal intervals before publication.
+- This is nominal simultaneous coverage for one deliberately narrow lift
+  family—not a finite-sample guarantee, joint coverage across metrics, a
+  capacity comparison, an optimal queue, staffing evidence, business value,
+  or real-world performance.
+
+The package retains the `0.6.0` fail-closed feature-level recurrence audit:
 
 - Across all three strict fingerprint-group seeds, normalized-exact and
   token-set-equality recurrence of the combined model input is zero across
@@ -36,10 +53,11 @@ feature-level recurrence audit without adding source data or a larger model:
   pseudo-duplicate cluster. The release gate verifies count conservation,
   finite and consistent shares, a complete audit schema, and combined-input
   isolation on every evaluation seed before writing the report.
-- The model, split protocols, existing model-performance metric definitions,
-  benchmark values, seeds, and decision contract are unchanged from `0.5.1`.
+- The model, split protocols, point estimates, seeds, and decision contract are
+  unchanged from `0.6.0`. Bootstrap intervals were regenerated at 20,000 draws;
+  contract `5.2` adds the lift-family band and its fail-closed gate.
 
-Package `0.6.0` also retains the `0.5.1` data-integrity correction:
+The package also retains the `0.5.1` data-integrity correction:
 
 - In `0.5.0`, 18 duplicate-generated rows inherited a missing body as the literal
   string `"None"`. The generator now preserves native nulls, so the canonical
@@ -51,7 +69,8 @@ Package `0.6.0` also retains the `0.5.1` data-integrity correction:
   corrected fixture. They supersede the `0.5.0` synthetic results; metric changes
   are a data integrity correction, not evidence that the model improved.
 - The decision contract, model, seeds, split protocols, and existing null checks
-  remain unchanged; contract `5.1` adds the recurrence audit and its gate.
+  remain unchanged; contract `5.1` added the recurrence audit and its gate, which
+  contract `5.2` retains.
 
 - Four fixed rolling test horizons are now replayed under pre-specified 0-, 14-,
   and 30-day proxy-label delay scenarios. Every scenario evaluates the same test
@@ -78,9 +97,11 @@ Package `0.6.0` also retains the `0.5.1` data-integrity correction:
 - The manual-review workload is no longer represented by one arbitrary point.
   Queue shares of 5%, 10%, and 20% are pre-specified and always reported together;
   no capacity is selected after seeing the result.
-- The frozen canonical fingerprint-group scoring rule receives the same 2,000
-  near-text-cluster resamples at all three capacities. The resulting marginal 95%
-  percentile intervals are pointwise diagnostics, not a simultaneous band.
+- The frozen canonical fingerprint-group scoring rule receives the same 20,000
+  token-set-equality fingerprint-cluster resamples at all three capacities.
+  Marginal 95% intervals are reported for precision, recall, and lift; a
+  separately labeled nominal 95% Bonferroni-adjusted bootstrap family band
+  covers lift across the three capacities only.
 - Three matched strict-split seeds show descriptive capacity sensitivity separately
   from bootstrap uncertainty. These ranges are not confidence intervals.
 - Both train-label permutations and test-label-alignment placebos must fall inside
@@ -181,22 +202,23 @@ bounds can stop a suspicious release, but are not a calibrated joint hypothesis 
 
 The table below uses the first strict fingerprint-group split and one frozen scoring
 rule. Queue rows are the actual `ceil` workloads for its 415 labeled test rows. All
-three capacities were specified before the canonical run and share the same 2,000
+three capacities were specified before the canonical run and share the same 20,000
 cluster-bootstrap resamples.
 
-| Queue share | Queue rows | Precision | Recall | Lift | Conditional 95% lift interval | Lift range across 3 matched seeds |
-|---:|---:|---:|---:|---:|---:|---:|
-| 5% | 21 | 0.286 | 0.058 | 1.15x | [0.48x, 2.18x] | 1.15x–2.99x |
-| 10% | 42 | 0.357 | 0.146 | 1.44x | [0.88x, 2.17x] | 1.44x–2.53x |
-| 20% | 83 | 0.458 | 0.369 | 1.84x | [1.40x, 2.29x] | 1.84x–2.24x |
+| Queue share | Queue rows | Precision | Recall | Lift | Marginal 95% lift interval | Nominal familywise 95% lift band | Lift range across 3 matched seeds |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5% | 21 | 0.286 | 0.058 | 1.15x | [0.42x, 2.13x] | [0.23x, 2.34x] | 1.15x–2.99x |
+| 10% | 42 | 0.357 | 0.146 | 1.44x | [0.87x, 2.15x] | [0.75x, 2.32x] | 1.44x–2.53x |
+| 20% | 83 | 0.458 | 0.369 | 1.84x | [1.39x, 2.27x] | [1.29x, 2.37x] | 1.84x–2.24x |
 
-The 5% and 10% pointwise lift intervals cross the chance value of 1.00x. The 20%
-interval does not, conditional on this one frozen synthetic scoring rule. That is
-not a staffing recommendation or evidence of business value: the three intervals
-are marginal rather than simultaneous (so this is not a family-wise 95% conclusion),
-the target is a rating-derived oracle proxy, and review costs and downstream actions
-are not modeled. The full report also
-retains precision and recall intervals rather than selecting the largest lift.
+Both the marginal and familywise lift intervals at 5% and 10% cross the chance
+value of 1.00x. The 20% familywise band does not, conditional on this one frozen
+synthetic scoring rule. That is not a
+staffing recommendation or evidence of business value. The nominal familywise statement
+is limited to lift at the three pre-specified capacities; it does not cover
+precision, recall, pairwise capacity differences, capacity optimality, retraining,
+or real-world performance. The rating-derived oracle proxy, review costs, and
+downstream actions are not independently validated or modeled.
 
 ### Rolling-origin and label-delay sensitivity
 
@@ -242,23 +264,24 @@ all three delays, all 12 window-specific 20-draw gates passed; each delay's same
 
 The intervals freeze the first fingerprint-group manifest, fitted model, and
 authored synthetic test fixture after partition-local 3-star exclusion. They
-resample 301 near-text fingerprint clusters 2,000 times; the effective cluster
+resample 301 token-set-equality fingerprint clusters 20,000 times; the effective cluster
 count is 209.3, the largest cluster is 1.9% of test rows, and no draw is replenished.
 The non-capacity diagnostics are:
 
 | Metric | Fixed-test estimate | Conditional 95% lower | Conditional 95% upper |
 |---|---:|---:|---:|
-| Average precision | 0.394 | 0.316 | 0.498 |
-| AP − prevalence | 0.146 | 0.092 | 0.233 |
-| Brier | 0.170 | 0.150 | 0.189 |
+| Average precision | 0.394 | 0.317 | 0.497 |
+| AP − prevalence | 0.146 | 0.092 | 0.231 |
+| Brier | 0.170 | 0.151 | 0.190 |
 | Brier improvement vs train-prevalence probability | 0.017 | 0.003 | 0.030 |
 
-These are marginal percentile intervals conditional on one frozen synthetic scoring
-rule—not uncertainty over retraining, threshold selection, crossed user/product
-dependence, source selection, future drift, or real-data generalization. The AP
-estimate is therefore the canonical seed-1103 point, not the three-seed mean in the
-protocol table. Capacity intervals use the same resamples and are shown together in
-the pre-specified capacity table above; none can support a deployment-benefit claim.
+These non-capacity intervals are marginal percentile intervals conditional on one
+frozen synthetic scoring rule—not uncertainty over retraining, threshold selection,
+crossed user/product dependence, source selection, future drift, or real-data
+generalization. The AP estimate is therefore the canonical seed-1103 point, not the
+three-seed mean in the protocol table. Capacity intervals use the same resamples;
+only the separately labeled lift family has nominal simultaneous Bonferroni coverage, and
+none of these intervals can support a deployment-benefit claim.
 
 The OOV-only stress case was also made structural rather than cosmetic: 100% of
 rows produced zero TF-IDF vectors, AP fell exactly to prevalence (0.241), and
@@ -285,7 +308,7 @@ python -m pip install --no-deps -e .
 python -m review_reliability demo
 
 # Canonical report: five protocols, four rolling origins at authored 0/14/30-day
-# delays, pre-specified 5/10/20% capacities, 2,000 joint bootstrap draws, and placebos.
+# delays, pre-specified 5/10/20% capacities, 20,000 joint bootstrap draws, and placebos.
 python -m review_reliability benchmark
 ```
 
@@ -296,8 +319,9 @@ ruff check --no-cache src tests
 pytest
 ```
 
-CI runs offline synthetic tests on Python 3.11, 3.12, and 3.13. No test or
-workflow downloads review data.
+CI runs offline synthetic tests on Python 3.11, 3.12, and 3.13. The Python 3.13
+job also rebuilds the canonical aggregate report and requires a byte-for-byte
+match with the tracked artifact. No test or workflow downloads review data.
 
 ## Evaluation flow
 
@@ -350,9 +374,11 @@ before attempting any separate private real-data study.
 - Four synthetic rolling origins do not establish real-source temporal
   generalization; repeated text, users, and products still cross time boundaries.
 - The cluster-bootstrap intervals condition on one frozen synthetic scoring rule
-  and do not cover retraining, crossed dependence, or future drift.
+  and do not cover retraining, crossed dependence, or future drift. The 95%
+  nominal familywise statement covers lift across three pre-specified capacities only.
 - The 5%, 10%, and 20% workloads are sensitivity scenarios, not validated staffing
-  levels; pointwise intervals do not support choosing a capacity after the fact.
+  levels; the lift-only family band neither estimates pairwise differences nor
+  establishes an optimal capacity.
 - The 14- and 30-day delays are authored sensitivity scenarios, not observed label
   latency, business SLAs, recommended embargoes, or validation of an operational target.
 - Token-set grouping is a transparent MVP approximation, not a scalable
