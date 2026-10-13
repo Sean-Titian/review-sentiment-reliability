@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13.9"]
 
     steps:
       - uses: actions/checkout@v7
@@ -43,11 +43,11 @@ jobs:
         run: python -m review_reliability demo --rows 600 --output reports/generated/ci-demo.json
 
       - name: Rebuild canonical aggregate report
-        if: matrix.python-version == '3.13'
+        if: matrix.python-version == '3.13.9'
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m review_reliability benchmark --output "$RUNNER_TEMP/synthetic-benchmark.json"
 
       - name: Verify canonical report is current
-        if: matrix.python-version == '3.13'
+        if: matrix.python-version == '3.13.9'
         run: cmp reports/synthetic-benchmark.json "$RUNNER_TEMP/synthetic-benchmark.json"

@@ -319,9 +319,10 @@ ruff check --no-cache src tests
 pytest
 ```
 
-CI runs offline synthetic tests on Python 3.11, 3.12, and 3.13. The Python 3.13
-job also rebuilds the canonical aggregate report and requires a byte-for-byte
-match with the tracked artifact. No test or workflow downloads review data.
+CI runs offline synthetic tests on Python 3.11, 3.12, and the canonical Python
+3.13.9 runtime recorded in the report. The Python 3.13.9 job also rebuilds the
+canonical aggregate report and requires a byte-for-byte match with the tracked
+artifact. No test or workflow downloads review data.
 
 ## Evaluation flow
 
